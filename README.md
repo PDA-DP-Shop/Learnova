@@ -83,26 +83,26 @@
 ## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                        CLIENT (React)                        │
-│   ┌──────────────────┐        ┌──────────────────────────┐  │
-│   │  Admin Backoffice │        │     Learner Website      │  │
+┌───────────────────────────────────────────────────────────────┐
+│                        CLIENT (React)                         │
+│   ┌───────────────────┐        ┌───────────────────────────┐  │
+│   │  Admin Backoffice │        │     Learner Website       │  │
 │   │  /admin/*         │        │     /courses, /my-courses │  │
-│   └──────────────────┘        └──────────────────────────┘  │
-└─────────────────────────┬───────────────────────────────────┘
+│   └───────────────────┘        └───────────────────────────┘  │
+└──────────────────────────┬────────────────────────────────────┘
                            │ REST API (Axios)
                            ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                  SERVER (Node.js + Express)                   │
+│                  SERVER (Node.js + Express)                 │
 │   Auth · Courses · Lessons · Quizzes · Progress · Reports   │
-│   JWT Middleware · Role Guards · File Upload (Cloudinary)    │
-└─────────────────────────┬───────────────────────────────────┘
+│   JWT Middleware · Role Guards · File Upload (Cloudinary)   │
+└──────────────────────────┬──────────────────────────────────┘
                            │ Prisma ORM
                            ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                   DATABASE (PostgreSQL)                       │
+│                   DATABASE (PostgreSQL)                     │
 │   Users · Courses · Lessons · Quizzes · Enrollments ·       │
-│   Progress · Reviews · Attachments · Quiz Attempts           │
+│   Progress · Reviews · Attachments · Quiz Attempts          │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -490,12 +490,14 @@ npm start
 
 ## 👥 Team
 
-Built with ❤️ by **Team AntiGravity** for the 24-Hour eLearning Hackathon.
+Built with ❤️ by **Codinity** for the 24-Hour eLearning Hackathon.
 
 | Name | Role |
 |---|---|
-| Devansh Patel | Full Stack Lead |
-| *(Add teammates)* | *(Add roles)* |
+| Devansh Patel | Frontent & Backend |
+| Mit Prajapati | Security & Privacy |
+| Udit Rana | Frontent & Backend |
+| Rudra Modi | Backend |
 
 ---
 
@@ -507,7 +509,6 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 
 <div align="center">
 
-**Made with ❤️ by Team AntiGravity**
 
 ⭐ Star this repo if you found it helpful!
 
