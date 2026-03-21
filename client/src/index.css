@@ -1,0 +1,119 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-bg-primary: #0F172A;
+  --color-bg-secondary: #1E293B;
+  --color-bg-tertiary: #253352;
+  --color-accent: #6366F1;
+  --color-accent-hover: #4F46E5;
+  --color-amber: #F59E0B;
+  --color-text-primary: #F8FAFC;
+  --color-text-secondary: #94A3B8;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-hover: rgba(99, 102, 241, 0.4);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-bg-tertiary) transparent;
+}
+*::-webkit-scrollbar { width: 6px; height: 6px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: var(--color-bg-tertiary); border-radius: 3px; }
+
+html, body {
+  @apply bg-navy-900 text-slate-50;
+  font-family: 'DM Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Sora', sans-serif;
+}
+
+.page-enter {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Glass morphism card */
+.glass-card {
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+/* Input styles */
+.input-base {
+  @apply w-full bg-navy-800 border border-white/10 rounded-lg px-4 py-2.5 text-slate-50 placeholder-slate-500 
+         focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200;
+}
+
+/* Custom select */
+.select-base {
+  @apply input-base appearance-none cursor-pointer;
+}
+
+/* Radio card style */
+.radio-card {
+  @apply flex items-center gap-3 p-3.5 rounded-lg border border-white/10 cursor-pointer transition-all duration-200;
+}
+.radio-card:hover { @apply border-indigo-500/40 bg-navy-800; }
+.radio-card.selected { @apply border-indigo-500 bg-indigo-500/10; }
+
+/* Tag chip */
+.tag-chip {
+  @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium
+         bg-indigo-500/15 text-indigo-400 border border-indigo-500/20;
+}
+
+/* Status badge presets */
+.badge-green  { @apply bg-emerald-500/15 text-emerald-400 border-emerald-500/20; }
+.badge-amber  { @apply bg-amber-500/15 text-amber-400 border-amber-500/20; }
+.badge-slate  { @apply bg-slate-500/15 text-slate-400 border-slate-500/20; }
+.badge-indigo { @apply bg-indigo-500/15 text-indigo-400 border-indigo-500/20; }
+.badge-red    { @apply bg-red-500/15 text-red-400 border-red-500/20; }
+
+/* Sidebar nav item */
+.nav-item {
+  @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 transition-all duration-150 cursor-pointer select-none text-sm font-medium;
+}
+.nav-item:hover { @apply text-slate-100 bg-white/5; }
+.nav-item.active { @apply text-indigo-400 bg-indigo-500/15 font-semibold; }
+
+/* Courses kanban column */
+.kanban-col {
+  @apply flex flex-col gap-3 min-h-64 p-3 rounded-xl border border-white/5 bg-navy-800/50;
+}
+
+/* Lesson type icon */
+.lesson-icon-video    { @apply bg-violet-500/15 text-violet-400; }
+.lesson-icon-document { @apply bg-sky-500/15 text-sky-400; }
+.lesson-icon-image    { @apply bg-pink-500/15 text-pink-400; }
+.lesson-icon-quiz     { @apply bg-amber-500/15 text-amber-400; }
+
+/* Progress glow */
+.progress-glow {
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
+}
+
+/* Animated underline */
+.animated-underline {
+  position: relative;
+}
+.animated-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: #6366F1;
+  transition: width 0.3s ease;
+}
+.animated-underline:hover::after { width: 100%; }
