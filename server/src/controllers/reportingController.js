@@ -1,6 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-
-const prisma = new PrismaClient();
+const { prisma } = require('../config/db');
 
 const getReporting = async (req, res) => {
   try {
@@ -41,15 +39,14 @@ const getReporting = async (req, res) => {
     const totalCourses = await prisma.course.count({ where: courseWhere });
     const totalReviews = await prisma.review.count({ where: req.user.role === 'ADMIN' ? {} : { course: { instructorId: req.user.id } } });
     
-    // Revenue simulation (mocked or aggregated from price properties if payment was active)
+    // Revenue Intelligence: Aggregate from verified Payment capture records
     let totalRevenue = 0;
-    if (req.user.role === 'ADMIN') {
-      const paidCourses = await prisma.course.findMany({ where: { price: { gt: 0 } }, select: { price: true, _count: { select: { enrollments: true } } } });
-      totalRevenue = paidCourses.reduce((sum, c) => sum + ((c.price || 0) * c._count.enrollments), 0);
-    } else {
-      const paidCourses = await prisma.course.findMany({ where: { instructorId: req.user.id, price: { gt: 0 } }, select: { price: true, _count: { select: { enrollments: true } } } });
-      totalRevenue = paidCourses.reduce((sum, c) => sum + ((c.price || 0) * c._count.enrollments), 0);
-    }
+    const paymentWhere = req.user.role === 'ADMIN' ? { status: 'SUCCESS' } : { status: 'SUCCESS', course: { instructorId: req.user.id } };
+    const paymentAggs = await prisma.payment.aggregate({
+      _sum: { amount: true },
+      where: paymentWhere
+    });
+    totalRevenue = paymentAggs._sum.amount || 0;
     
     // User Metrics Only For Admin
     let totalNetworkUsers = 0;

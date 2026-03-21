@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, CheckCircle2, Clock, BookOpen, Play, FileText, Image, HelpCircle, Search, Star, MessageSquare, ShieldCheck, Sparkles, Trophy, Globe, Zap, ChevronRight, Users, Lock } from 'lucide-react'
-import { motion, AnimatePresence, color } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import LearnerLayout from '../../components/layout/LearnerLayout'
 import Tabs from '../../components/ui/Tabs'
 import ProgressBar from '../../components/ui/ProgressBar'
@@ -10,8 +10,9 @@ import Modal from '../../components/ui/Modal'
 import Button from '../../components/ui/Button'
 import Spinner from '../../components/ui/Spinner'
 import Badge from '../../components/ui/Badge'
-import { courseAPI, enrollmentAPI, reviewAPI, userAPI } from '../../services/api'
+import { courseAPI, enrollmentAPI, reviewAPI, userAPI, paymentAPI } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
+import { formatDuration } from '../../utils/time'
 import PointsPopup from '../../components/ui/PointsPopup'
 import FakeRazorpayModal from '../../components/ui/FakeRazorpayModal'
 import { calcCompletionPercent, formatDate } from '../../utils/progress'
@@ -52,10 +53,13 @@ const CourseDetail = () => {
   const [showPayment, setShowPayment] = useState(false)
   const [isFollowing, setIsFollowing] = useState(false)
 
+  const [liveTime, setLiveTime] = useState(0)
+
   useEffect(() => {
     courseAPI.getDetail(id)
       .then(({ data: d }) => {
         setData(d)
+        setLiveTime(d.enrollment?.timeSpent || 0)
         if (d.isFollowing !== undefined) setIsFollowing(d.isFollowing)
       })
       .catch(() => toast.error('Academy database connection failed'))
@@ -63,6 +67,15 @@ const CourseDetail = () => {
   }, [id])
 
   const { course, enrollment, lessonProgress, quizAttempts, leaderboard } = data || {} 
+
+  // Real-Time Temporal Synchronizer
+  useEffect(() => {
+    if (!enrollment || user?.role === 'ADMIN') return
+    const timer = setInterval(() => {
+      setLiveTime(prev => prev + 1)
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [enrollment, user?.role])
   const hasAccess = enrollment || user?.role === 'ADMIN'
   const completedIds = new Set(lessonProgress?.filter((p) => p.isCompleted).map((p) => p.lessonId))
   const completedQuizzes = new Set(quizAttempts?.map((a) => a.quizId))
@@ -86,21 +99,75 @@ const CourseDetail = () => {
   const handleEnroll = async () => {
     if (!user) { navigate('/login'); return }
     if (course.accessRule === 'ON_PAYMENT') {
-      setShowPayment(true)
-      return
+       navigate(`/checkout/${id}`)
+       return
     }
     
     executeEnrollment()
   }
 
-  const executeEnrollment = async (paymentDetails = null) => {
+  const loadRazorpay = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement('script')
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js'
+      script.onload = () => resolve(true)
+      script.onerror = () => resolve(false)
+      document.body.appendChild(script)
+    })
+  }
+
+  const handleRazorpayPayment = async () => {
+    const res = await loadRazorpay()
+    if (!res) return toast.error('Payment gateway database link failed')
+
+    const loadingToast = toast.loading('Initiating secure acquisition...')
+    try {
+      const { data: order } = await paymentAPI.createOrder(id)
+      
+      const options = {
+        key: order.keyId,
+        amount: order.amount,
+        currency: order.currency,
+        name: "Learnova Academy",
+        description: `Enrollment: ${course.title}`,
+        order_id: order.orderId,
+        handler: async (response) => {
+          const verifyToast = toast.loading('Verifying transaction hash...')
+          try {
+            await paymentAPI.verifyPayment({
+              ...response,
+              courseId: id
+            })
+            const { data: fresh } = await courseAPI.getDetail(id)
+            setData(fresh)
+            toast.success('Curriculum Access Mastered!', { id: verifyToast })
+          } catch (err) {
+            toast.error('Cryptographic verification failed', { id: verifyToast })
+          }
+        },
+        prefill: {
+          name: user.name,
+          email: user.email,
+        },
+        theme: {
+          color: "#714B67",
+        },
+      }
+
+      const rzp = new window.Razorpay(options)
+      rzp.open()
+      toast.dismiss(loadingToast)
+    } catch (err) {
+      toast.error('Acquisition link failed', { id: loadingToast })
+    }
+  }
+
+  const executeEnrollment = async (isSimulated = false) => {
     setEnrolling(true)
     const loadingToast = toast.loading('Syncing progress database...')
     try {
-      // In a real application, we would send paymentDetails to the server here to verify signature
-      await enrollmentAPI.enroll(id)
+      await enrollmentAPI.enroll(id, isSimulated)
       const { data: fresh } = await courseAPI.getDetail(id)
-      setShowPayment(false)
       setData(fresh)
       toast.success('Course Access Granted!', { id: loadingToast })
     } catch (err) {
@@ -335,7 +402,7 @@ const CourseDetail = () => {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                    <p className="text-[10px] font-black text-[#714B67] uppercase tracking-widest mb-1.5 flex items-center gap-2">
-                                     Module {i + 1} • {lesson.type} {lesson.duration && `• ${lesson.duration}min`}
+                                     Module {i + 1} • {lesson.type} {lesson.duration && `• ${formatDuration(lesson.duration)}`}
                                    </p>
                                    <h3 className={`text-base font-black tracking-tight ${done ? 'text-slate-300 line-through' : 'text-slate-900'}`}>
                                      {lesson.title}
@@ -471,9 +538,9 @@ const CourseDetail = () => {
                            {[
                                { label: 'Content Modules', value: course.lessons?.length || 0, icon: BookOpen, color: 'text-[#714B67]' },
                              { label: 'Exams & Quizzes', value: course.quizzes?.length || 0, icon: Trophy, color: 'text-amber-600' },
-                             { label: 'Course Completion XP', value: course.rewardXP || 500, icon: Zap, color: 'text-emerald-400' },
+                             { label: 'Total Duration', value: formatDuration(course.totalDuration || 0), icon: Clock, color: 'text-sky-500' },
                              { label: 'Program Status', value: enrollment ? enrollment.status.replace(/_/g, ' ') : 'STANDBY', icon: ShieldCheck, color: 'text-[#017E84]' },
-                             ...(enrollment ? [{ label: 'Time Spent', value: (() => { const s = enrollment.timeSpent || 0; const h = Math.floor(s/3600); const m = Math.floor((s%3600)/60); return `${h}h ${m}m`; })(), icon: Clock, color: 'text-blue-500' }] : []),
+                             ...(enrollment ? [{ label: 'Time Spent', value: (() => { const h = Math.floor(liveTime/3600); const m = Math.floor((liveTime%3600)/60); const s = liveTime%60; return `${h}h ${m}m ${s}s`; })(), icon: Clock, color: 'text-blue-500 font-mono' }] : []),
                            ].map((stat, i) => (
                              <div key={i} className="flex items-center gap-4">
                                 <div className={`w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center ${stat.color} border border-slate-100`}>
@@ -605,17 +672,7 @@ const CourseDetail = () => {
         </div>
       </Modal>
 
-      {/* Payment Modal */}
-      {course && (
-        <FakeRazorpayModal
-          isOpen={showPayment}
-          onClose={() => setShowPayment(false)}
-          amount={course.price}
-          name="Learnova Mastery"
-          description={`Payment for: ${course.title}`}
-          onSuccess={executeEnrollment}
-        />
-      )}
+      {/* Payment simulation is now handled by a dedicated full-page checkout */}
 
       {/* XP Popup for Reviews */}
       <PointsPopup

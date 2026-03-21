@@ -12,7 +12,7 @@ const uploadToCloudinary = async (file, folder = 'learnova') => {
       folder,
       resource_type: 'auto',
     });
-    return result.secure_url;
+    return result; // RETURN FULL OBJECT
   } catch (error) {
     console.error('Cloudinary upload error:', error);
     throw new Error('Failed to upload file');

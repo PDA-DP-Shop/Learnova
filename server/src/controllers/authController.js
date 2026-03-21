@@ -1,8 +1,6 @@
-const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const { signAccessToken, signRefreshToken } = require('../utils/jwt');
-
-const prisma = new PrismaClient();
+const { prisma } = require('../config/db');
 
 const register = async (req, res) => {
   try {
@@ -32,8 +30,8 @@ const register = async (req, res) => {
       user: { id: user.id, name: user.name, email: user.email, role: user.role, totalPoints: user.totalPoints },
     });
   } catch (error) {
-    console.error('Register error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('CRITICAL REGISTER FAILURE:', error);
+    res.status(500).json({ message: error.message || 'Server error' });
   }
 };
 

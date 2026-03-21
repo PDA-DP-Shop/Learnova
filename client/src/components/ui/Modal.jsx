@@ -30,10 +30,10 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg', showCl
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 12 }}
             transition={{ duration: 0.18, ease: 'easeOut' }}
-            className={`relative w-full ${maxWidth} bg-white border border-slate-100 rounded-2xl shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)]`}
+            className={`relative w-full ${maxWidth} bg-white border border-slate-100 rounded-2xl shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] flex flex-col max-h-[90vh]`}
           >
             {(title || showClose) && (
-              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-50 shadow-sm bg-slate-50/20">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-50 shadow-sm bg-slate-50/20 shrink-0">
                 {title && <h2 className="text-base font-black text-slate-900 font-sora tracking-tighter uppercase tracking-widest text-xs">{title}</h2>}
                 {showClose && (
                   <button
@@ -45,7 +45,7 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg', showCl
                 )}
               </div>
             )}
-            <div className="px-6 py-5">{children}</div>
+            <div className="px-6 py-5 overflow-y-auto">{children}</div>
           </motion.div>
         </div>
       )}

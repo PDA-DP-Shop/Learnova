@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ChevronRight, CheckCircle2, BookOpen, Play, FileText, Image, HelpCircle, Paperclip, ExternalLink, Download, PanelLeftClose, PanelLeftOpen, ArrowLeft, Sparkles, GraduationCap } from 'lucide-react'
-import { courseAPI, progressAPI, enrollmentAPI } from '../../services/api'
+import { courseAPI, progressAPI, enrollmentAPI, quizAPI } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
 import { calcCompletionPercent } from '../../utils/progress'
 import Spinner from '../../components/ui/Spinner'
 import Button from '../../components/ui/Button'
 import PointsPopup from '../../components/ui/PointsPopup'
+import CelebrationOverlay from '../../components/ui/CelebrationOverlay'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
 
@@ -33,8 +34,16 @@ const LessonPlayer = () => {
   const [marking, setMarking] = useState(false)
   const [completing, setCompleting] = useState(false)
   const [pointsInfo, setPointsInfo] = useState({ show: false, earned: 0, total: 0 })
+  const [showCelebration, setShowCelebration] = useState(false)
   const [sessionTime, setSessionTime] = useState(0)
   const deltaAccumulator = useRef(0)
+  
+  // Inline Quiz State
+  const [quizPhase, setQuizPhase] = useState('intro') // intro, question, done
+  const [currentQuizIdx, setCurrentQuizIdx] = useState(0)
+  const [quizAnswers, setQuizAnswers] = useState({})
+  const [quizSubmitting, setQuizSubmitting] = useState(false)
+  const [quizResult, setQuizResult] = useState(null)
 
   useEffect(() => {
     if (data?.enrollment?.timeSpent) {
@@ -85,7 +94,16 @@ const LessonPlayer = () => {
       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">Entering Classroom...</span>
     </div>
   )
-  if (!data) return <div className="text-center py-32 text-slate-500">Not found</div>
+  if (!data || !data.course) return <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-6 p-8">
+     <div className="w-20 h-20 rounded-[2rem] bg-white shadow-xl flex items-center justify-center text-[#714B67]">
+        <GraduationCap size={40} />
+     </div>
+     <div className="text-center">
+        <h2 className="text-xl font-black text-slate-900 font-sora mb-2">Curriculum Not Prepared</h2>
+        <p className="text-sm font-medium text-slate-500 max-w-xs mx-auto mb-8">This portal requires the course foundation to be active. Please verify your connection or contact support.</p>
+        <Button onClick={() => navigate('/courses')}>Global Discovery</Button>
+     </div>
+  </div>
 
   const { course, enrollment, lessonProgress } = data
   const completedIds = new Set(lessonProgress?.filter((p) => p.isCompleted).map((p) => p.lessonId))
@@ -135,13 +153,39 @@ const LessonPlayer = () => {
         setPointsInfo({ show: true, earned: res.pointsEarned, total: res.totalPoints })
         updateUser({ totalPoints: res.totalPoints })
       } else {
-        toast.success('🎓 Magnificent! You finished the course!')
-        setPointsInfo({ show: true, earned: 0, total: res.totalPoints }) 
+        setShowCelebration(true)
       }
     } catch { toast.error('Failed to complete course') } finally { setCompleting(false) }
   }
 
-  const embedUrl = currentLesson?.type === 'VIDEO' ? getYoutubeEmbedUrl(currentLesson.videoUrl) : null
+  const embedUrl = currentLesson?.type === 'VIDEO' && currentLesson.videoUrl ? getYoutubeEmbedUrl(currentLesson.videoUrl) : null
+  const isNativeVideo = currentLesson?.type === 'VIDEO' && currentLesson.fileUrl && !currentLesson.videoUrl
+
+  // Quiz Helpers
+  const handleInlineQuizSubmit = async () => {
+    if (!currentLesson?.quiz?.id) return
+    setQuizSubmitting(true)
+    try {
+      const { data: res } = await quizAPI.submitAttempt(currentLesson.quiz.id, { 
+        answers: quizAnswers, 
+        timeTaken: 0 // Simplification for inline module quizzes
+      })
+      setQuizResult(res)
+      setQuizPhase('done')
+      if (res.pointsEarned > 0) {
+        setPointsInfo({ show: true, earned: res.pointsEarned, total: res.totalPoints })
+        updateUser({ totalPoints: res.totalPoints })
+      }
+      // Auto-mark lesson as complete if they passed well?
+      if (res.score >= 80 && !isDone && user?.role !== 'ADMIN') {
+        markComplete()
+      }
+    } catch (err) { 
+      const msg = err?.response?.data?.message || 'Failed to submit quiz'
+      toast.error(msg)
+      console.error('Quiz Submit Error:', err)
+    } finally { setQuizSubmitting(false) }
+  }
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-inter">
@@ -256,15 +300,31 @@ const LessonPlayer = () => {
               >
                 {/* Media Wrapper */}
                 <div className="mb-12 rounded-[2.5rem] overflow-hidden border-4 border-white bg-slate-100 shadow-[0_20px_60px_-15px_rgba(113,75,103,0.15)] relative group">
-                  {currentLesson?.type === 'VIDEO' && embedUrl && (
+                  {currentLesson?.type === 'VIDEO' && (
                     <div className="relative w-full aspect-video bg-slate-950">
-                      <iframe
-                        src={embedUrl}
-                        title={currentLesson.title}
-                        className="absolute inset-0 w-full h-full"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
+                      {embedUrl ? (
+                        <iframe
+                          src={embedUrl}
+                          title={currentLesson.title}
+                          className="absolute inset-0 w-full h-full border-none"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      ) : currentLesson?.fileUrl ? (
+                        <video
+                          key={currentLesson.fileUrl}
+                          src={currentLesson.fileUrl}
+                          controls
+                          className="absolute inset-0 w-full h-full object-contain"
+                          controlsList="nodownload"
+                          playsInline
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center p-12 text-center bg-slate-900">
+                           <Play size={48} className="text-slate-700 mb-4 opacity-20" />
+                           <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Video Stream Unavailable</p>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -325,26 +385,93 @@ const LessonPlayer = () => {
                     </div>
                   )}
 
-                  {currentLesson?.type === 'QUIZ' && (
-                    <div className="py-32 px-8 text-center bg-gradient-to-br from-[#714B67] to-[#017E84] relative overflow-hidden">
-                      {/* Decorative Background Patterns */}
-                      <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 border-[40px] border-white/5 rounded-full blur-sm" />
-                       <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
-                       
-                      <div className="relative z-10">
-                        <div className="w-24 h-24 rounded-[2rem] bg-white/10 backdrop-blur-md flex items-center justify-center mx-auto mb-8 border border-white/20 shadow-2xl">
-                           <HelpCircle size={48} className="text-white drop-shadow-lg" />
-                        </div>
-                        <h2 className="text-4xl font-black text-white font-sora mb-6 tracking-tight">Time for a Checkpoint!</h2>
-                        <p className="text-white/80 font-medium mb-12 max-w-md mx-auto text-lg">This module culminates in a knowledge assessment. Complete the quiz to verify your mastery and earn your XP.</p>
-                        {course.quizzes?.length > 0 ? (
-                          <Button size="xl" onClick={() => navigate(`/courses/${courseId}/quiz/${course.quizzes[0].id}`)} className="px-12 rounded-[2rem] bg-white hover:bg-slate-50 text-[#714B67] shadow-2xl hover:-translate-y-1">
-                            Launch Official Assessment
-                          </Button>
-                        ) : (
-                          <p className="text-white/50 text-xs font-black uppercase tracking-widest bg-black/10 inline-block px-6 py-3 rounded-full">Assessment arriving soon</p>
+                  {currentLesson?.type === 'QUIZ' && currentLesson.quiz && (
+                    <div className="bg-slate-900 rounded-[2.5rem] overflow-hidden border-4 border-white shadow-2xl relative">
+                      <AnimatePresence mode="wait">
+                        {quizPhase === 'intro' && (
+                          <motion.div key="intro" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="py-24 px-8 text-center bg-gradient-to-br from-[#714B67] to-[#017E84]">
+                             <div className="w-20 h-20 rounded-3xl bg-white/10 backdrop-blur-md flex items-center justify-center mx-auto mb-6 border border-white/20">
+                               <HelpCircle size={40} className="text-white" />
+                             </div>
+                             <h2 className="text-3xl font-black text-white mb-4">Module Checkpoint</h2>
+                             <p className="text-white/70 max-w-sm mx-auto mb-10 text-sm">Verify your understanding of this module. Complete the quiz to earn points and proceed.</p>
+                             <Button size="xl" variant="secondary" onClick={() => { setQuizPhase('question'); setCurrentQuizIdx(0); setQuizAnswers({}) }} className="px-10 shadow-2xl">
+                               Start Quiz
+                             </Button>
+                          </motion.div>
                         )}
-                      </div>
+
+                        {quizPhase === 'question' && (
+                          <motion.div key="question" initial={{ x: 30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -30, opacity: 0 }} className="p-12 sm:p-20 bg-white min-h-[500px] flex flex-col justify-center">
+                            <div className="mb-8">
+                               <span className="text-[10px] font-black text-[#714B67] uppercase tracking-widest bg-[#714B67]/5 px-3 py-1 rounded-full">Question {currentQuizIdx + 1} of {currentLesson.quiz.questions.length}</span>
+                               <h3 className="text-2xl font-black text-slate-900 mt-4 leading-tight">{currentLesson.quiz.questions[currentQuizIdx].text}</h3>
+                            </div>
+                            <div className="space-y-3 mb-10">
+                              {currentLesson.quiz.questions[currentQuizIdx].options.map((opt, oi) => {
+                                const selected = quizAnswers[currentLesson.quiz.questions[currentQuizIdx].id] === opt.id
+                                return (
+                                  <button 
+                                    key={opt.id} 
+                                    onClick={() => setQuizAnswers(prev => ({ ...prev, [currentLesson.quiz.questions[currentQuizIdx].id]: opt.id }))}
+                                    className={`w-full p-4 rounded-2xl border-2 text-left transition-all flex items-center gap-4 ${selected ? 'border-[#714B67] bg-[#714B67]/5 text-slate-900' : 'border-slate-100 hover:border-slate-200 text-slate-600'}`}
+                                  >
+                                    <div className={`w-8 h-8 rounded-xl border-2 flex items-center justify-center text-xs font-black shrink-0 ${selected ? 'bg-[#714B67] border-[#714B67] text-white' : 'border-slate-100 text-slate-300'}`}>
+                                      {String.fromCharCode(65 + oi)}
+                                    </div>
+                                    <span className="font-bold">{opt.text}</span>
+                                  </button>
+                                )
+                              })}
+                            </div>
+                            <div className="flex justify-end pt-4 border-t border-slate-100">
+                              {currentQuizIdx < currentLesson.quiz.questions.length - 1 ? (
+                                <Button disabled={!quizAnswers[currentLesson.quiz.questions[currentQuizIdx].id]} onClick={() => setCurrentQuizIdx(v => v + 1)}>
+                                  Next Question
+                                </Button>
+                              ) : (
+                                <Button 
+                                  loading={quizSubmitting} 
+                                  disabled={!quizAnswers[currentLesson.quiz.questions[currentQuizIdx].id]} 
+                                  onClick={handleInlineQuizSubmit}
+                                >
+                                  Submit Results
+                                </Button>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+
+                        {quizPhase === 'done' && quizResult && (
+                          <motion.div key="done" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="p-12 sm:p-20 text-center bg-white min-h-[500px] flex flex-col justify-center">
+                            <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-6 text-emerald-600">
+                               <CheckCircle2 size={32} />
+                            </div>
+                            <h2 className="text-3xl font-black text-slate-900 mb-2">Check complete!</h2>
+                            <p className="text-slate-500 font-medium mb-8">You mastered the checkpoint with {quizResult.score}% accuracy.</p>
+                            
+                            <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto mb-10">
+                               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                                  <p className="text-2xl font-black text-slate-900">{quizResult.score}%</p>
+                                  <p className="text-[10px] font-black uppercase text-slate-400">Score</p>
+                               </div>
+                               <div className="p-4 rounded-2xl bg-[#714B67]/5 border border-[#714B67]/10 text-[#714B67]">
+                                  <p className="text-2xl font-black">+{quizResult.pointsEarned}</p>
+                                  <p className="text-[10px] font-black uppercase">XP Reward</p>
+                               </div>
+                            </div>
+
+                            <Button onClick={() => setQuizPhase('intro')}>Retry Checkpoint</Button>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  )}
+                  {currentLesson?.type === 'QUIZ' && !currentLesson.quiz && (
+                    <div className="py-32 px-8 text-center bg-slate-900 rounded-[2.5rem]">
+                       <HelpCircle size={48} className="text-slate-700 mx-auto mb-6 opacity-20" />
+                       <h2 className="text-xl font-black text-white">Assessment Arriving Soon</h2>
+                       <p className="text-white/40 text-sm mt-2">The instructor is currently compiling the module questions.</p>
                     </div>
                   )}
                 </div>
@@ -371,7 +498,7 @@ const LessonPlayer = () => {
                   </div>
 
                   <aside className="space-y-6">
-                    {currentLesson?.attachments?.length > 0 && (
+                    {(currentLesson?.attachments && currentLesson.attachments.length > 0) && (
                       <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
                         <div className="flex items-center gap-4 mb-6">
                            <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-500 border border-slate-100">
@@ -454,11 +581,17 @@ const LessonPlayer = () => {
         onClose={() => {
           setPointsInfo({ ...pointsInfo, show: false });
           if (allDone && enrollment?.status !== 'COMPLETED') {
-            navigate(`/courses/${courseId}`);
+            setShowCelebration(true);
           }
         }}
         pointsEarned={pointsInfo.earned}
         newTotal={pointsInfo.total}
+      />
+
+      <CelebrationOverlay
+        isOpen={showCelebration}
+        onClose={() => navigate(`/courses/${courseId}`)}
+        courseTitle={course?.title}
       />
     </div>
   )

@@ -202,19 +202,6 @@ const CoursesDashboard = () => {
               autoFocus
             />
           </div>
-          <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-widest">Course Completion XP</label>
-            <input
-              type="number"
-              min="0"
-              step="50"
-              value={newRewardXP}
-              onChange={(e) => setNewRewardXP(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
-              placeholder="500"
-              className="input-base"
-            />
-          </div>
           <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-slate-100">
             <Button variant="secondary" onClick={() => setNewModal(false)}>Cancel</Button>
             <Button loading={creating} onClick={handleCreate} disabled={!newTitle.trim()}>Create Course</Button>

@@ -17,7 +17,11 @@ const getCourses = async (req, res) => {
       },
       orderBy: { createdAt: 'desc' },
     });
-    res.json(courses);
+    const coursesWithDuration = courses.map(c => ({
+      ...c,
+      totalDuration: c.lessons.reduce((acc, l) => acc + (l.duration || 0), 0)
+    }));
+    res.json(coursesWithDuration);
   } catch (error) {
     console.error('getCourses error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -35,12 +39,17 @@ const getPublicCourses = async (req, res) => {
       where,
       include: {
         instructor: { select: { id: true, name: true } },
+        lessons: { select: { duration: true } }, // ADD LESSONS FOR DURATION CALC
         _count: { select: { lessons: true, enrollments: true, quizzes: true } },
         reviews: { select: { rating: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
-    res.json(courses);
+    const coursesWithDuration = courses.map(c => ({
+      ...c,
+      totalDuration: c.lessons.reduce((acc, l) => acc + (l.duration || 0), 0)
+    }));
+    res.json(coursesWithDuration);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -92,7 +101,8 @@ const updateCourse = async (req, res) => {
     let coverImage;
 
     if (req.files && req.files.coverImage) {
-      coverImage = await uploadToCloudinary(req.files.coverImage, 'learnova/covers');
+      const result = await uploadToCloudinary(req.files.coverImage, 'learnova/covers');
+      coverImage = result.secure_url;
     }
 
     const updateData = {};
@@ -167,7 +177,13 @@ const getCourseDetail = async (req, res) => {
       where: { id: req.params.id },
       include: {
         instructor: { select: { id: true, name: true } },
-        lessons: { include: { attachments: true }, orderBy: { order: 'asc' } },
+        lessons: { 
+          include: { 
+            attachments: true,
+            quiz: { include: { questions: { include: { options: true }, orderBy: { order: 'asc' } } } }
+          }, 
+          orderBy: { order: 'asc' } 
+        },
         quizzes: { include: { rewards: true } },
         reviews: {
           include: { user: { select: { id: true, name: true, avatar: true } } },
@@ -215,7 +231,9 @@ const getCourseDetail = async (req, res) => {
     }
     const leaderboard = Array.from(userMap.values()).slice(0, 3);
 
-    res.json({ course, enrollment, lessonProgress, quizAttempts, leaderboard, isFollowing });
+    const totalDuration = course.lessons.reduce((acc, l) => acc + (l.duration || 0), 0);
+
+    res.json({ course: { ...course, totalDuration }, enrollment, lessonProgress, quizAttempts, leaderboard, isFollowing });
   } catch (error) {
     console.error('getCourseDetail error:', error);
     res.status(500).json({ message: 'Server error' });

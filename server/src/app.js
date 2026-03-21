@@ -9,10 +9,11 @@ const courseRoutes = require('./routes/courses');
 const enrollmentRoutes = require('./routes/enrollments');
 const progressRoutes = require('./routes/progress');
 const reportingRoutes = require('./routes/reporting');
+const paymentRoutes = require('./routes/payments');
 
 // Lesson and quiz controllers for standalone + nested routes
 const {
-  getLessons, createLesson, updateLesson, deleteLesson, addAttachment, deleteAttachment
+  getLessons, createLesson, updateLesson, deleteLesson, addAttachment, deleteAttachment, getLessonQuiz
 } = require('./controllers/lessonController');
 const {
   getQuizzes, createQuiz, getQuiz, updateQuiz, deleteQuiz,
@@ -34,7 +35,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(fileUpload({
   useTempFiles: true,
   tempFileDir: '/tmp/',
-  limits: { fileSize: 50 * 1024 * 1024 },
+  limits: { fileSize: 500 * 1024 * 1024 }, // 500MB for video uploads
 }));
 
 // Optional auth
@@ -53,6 +54,7 @@ app.use('/api/courses', courseRoutes);
 app.use('/api/enrollments', enrollmentRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/reporting', reportingRoutes);
+app.use('/api/payments', paymentRoutes);
 app.use('/api/users', require('./routes/users'));
 
 // Course-scoped lessons
@@ -60,6 +62,7 @@ app.get('/api/courses/:courseId/lessons', authenticate, getLessons);
 app.post('/api/courses/:courseId/lessons', authenticate, requireRole('ADMIN', 'INSTRUCTOR'), createLesson);
 
 // Standalone lesson ops
+app.get('/api/lessons/:id/quiz', authenticate, getLessonQuiz);
 app.put('/api/lessons/:id', authenticate, requireRole('ADMIN', 'INSTRUCTOR'), updateLesson);
 app.delete('/api/lessons/:id', authenticate, requireRole('ADMIN', 'INSTRUCTOR'), deleteLesson);
 app.post('/api/lessons/:id/attachments', authenticate, requireRole('ADMIN', 'INSTRUCTOR'), addAttachment);
@@ -81,7 +84,7 @@ app.post('/api/quizzes/:id/questions', authenticate, requireRole('ADMIN', 'INSTR
 app.put('/api/quizzes/:id/questions/:questionId', authenticate, requireRole('ADMIN', 'INSTRUCTOR'), updateQuestion);
 app.delete('/api/quizzes/:id/questions/:questionId', authenticate, requireRole('ADMIN', 'INSTRUCTOR'), deleteQuestion);
 app.put('/api/quizzes/:id/rewards', authenticate, requireRole('ADMIN', 'INSTRUCTOR'), updateRewards);
-app.post('/api/quizzes/:id/attempt', authenticate, requireRole('LEARNER'), submitAttempt);
+app.post('/api/quizzes/:id/attempt', authenticate, requireRole('LEARNER', 'ADMIN', 'INSTRUCTOR'), submitAttempt);
 
 // Reviews
 app.get('/api/reviews/:courseId', optionalAuth, getReviews);
@@ -99,6 +102,15 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Learnova server running on port ${PORT}`));
+const server = app.listen(PORT, () => console.log(`🚀 Learnova server running on port ${PORT}\n✅ Learnova Communication Station ready for discovery`));
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`❌ Port ${PORT} is already in use. Please kill the process on that port and restart.`);
+    process.exit(1);
+  } else {
+    throw err;
+  }
+});
 
 module.exports = app;

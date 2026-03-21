@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Users, BookOpen, Clock, Activity, Target } from 'lucide-react'
+import { Users, BookOpen, Clock, Activity, Target, Wallet, TrendingUp } from 'lucide-react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import AdminLayout from '../../components/layout/AdminLayout'
 import { reportingAPI } from '../../services/api'
@@ -70,18 +70,34 @@ const AdminOverview = () => {
             <p className="text-4xl font-black text-slate-900 font-sora tracking-tight">{stats?.platform?.totalReviews || 0}</p>
           </div>
 
-          {user?.role === 'ADMIN' && (
-            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group lg:col-span-1">
-              <div className="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-5 transition-opacity duration-500">
-                <Users size={120} />
-              </div>
-              <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center text-red-500 mb-4">
-                <Users size={20} />
-              </div>
-              <h3 className="text-sm font-bold text-slate-500 mb-1">Network Users</h3>
-              <p className="text-4xl font-black text-slate-900 font-sora tracking-tight">{stats?.platform?.totalNetworkUsers || 0}</p>
+          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group border-b-4 border-b-emerald-500/10">
+            <div className="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-10 transition-all duration-500 scale-150">
+              <Wallet size={120} className="text-[#017E84]" />
             </div>
-          )}
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-[#017E84] mb-4 shadow-inner">
+              <Wallet size={20} />
+            </div>
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Total Revenue</h3>
+            <div className="flex items-baseline gap-2">
+               <p className="text-4xl font-black text-slate-900 font-sora tracking-tighter">₹{(stats?.platform?.totalRevenue || 0).toLocaleString()}</p>
+               <span className="text-[10px] font-black text-emerald-500 flex items-center bg-emerald-50 px-2 py-0.5 rounded-full">+12.4%</span>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-5 transition-opacity duration-500">
+              <Users size={120} />
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center text-red-500 mb-4">
+              <Users size={20} />
+            </div>
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+              {user?.role === 'ADMIN' ? 'Network Users' : 'Student Links'}
+            </h3>
+            <p className="text-4xl font-black text-slate-900 font-sora tracking-tight">
+              {user?.role === 'ADMIN' ? (stats?.platform?.totalNetworkUsers || 0) : (stats?.platform?.totalEnrollments || 0)}
+            </p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

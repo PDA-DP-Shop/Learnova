@@ -14,6 +14,7 @@ import CourseForm from './pages/admin/CourseForm'
 import QuizBuilder from './pages/admin/QuizBuilder'
 import Reporting from './pages/admin/Reporting'
 import UsersDashboard from './pages/admin/UsersDashboard'
+import InstructorRevenue from './pages/admin/InstructorRevenue'
 
 // Learner Pages
 import CoursesPage from './pages/learner/CoursesPage'
@@ -22,6 +23,9 @@ import CourseDetail from './pages/learner/CourseDetail'
 import LessonPlayer from './pages/learner/LessonPlayer'
 import QuizPlayerPage from './pages/learner/QuizPlayer'
 import NetworkProfile from './pages/learner/NetworkProfile'
+import Checkout from './pages/learner/Checkout'
+import PaymentSuccess from './pages/learner/PaymentSuccess'
+import MobileGateway from './pages/learner/MobileGateway'
 
 const ProtectedRoute = ({ roles }) => {
   const { user, loading } = useAuth()
@@ -62,6 +66,9 @@ const AnimatedRoutes = () => {
           <Route path="/courses/:id/learn/:lessonId" element={<LessonPlayer />} />
           <Route path="/courses/:id/quiz/:quizId" element={<PageWrapper><QuizPlayerPage /></PageWrapper>} />
           <Route path="/network/:id" element={<PageWrapper><NetworkProfile /></PageWrapper>} />
+          <Route path="/checkout/:id" element={<PageWrapper><Checkout /></PageWrapper>} />
+          <Route path="/payment/success" element={<PageWrapper><PaymentSuccess /></PageWrapper>} />
+          <Route path="/payment/mobile-gateway" element={<MobileGateway />} />
         </Route>
 
         {/* Admin / Instructor */}
@@ -71,6 +78,7 @@ const AnimatedRoutes = () => {
           <Route path="/admin/courses/:id/edit" element={<PageWrapper><CourseForm /></PageWrapper>} />
           <Route path="/admin/courses/:id/quiz/:quizId" element={<PageWrapper><QuizBuilder /></PageWrapper>} />
           <Route path="/admin/reporting" element={<PageWrapper><Reporting /></PageWrapper>} />
+          <Route path="/admin/revenue" element={<PageWrapper><InstructorRevenue /></PageWrapper>} />
         </Route>
         
         {/* Super Admin */}

@@ -37,19 +37,42 @@ router.patch('/:id/toggle-status', authenticate, requireRole('ADMIN'), async (re
 
 router.delete('/:id', authenticate, requireRole('ADMIN'), async (req, res) => {
   try {
-    if (req.params.id === req.user.id) return res.status(400).json({ message: 'Cannot delete yourself' });
+    const { id } = req.params;
+    if (id === req.user.id) return res.status(400).json({ message: 'Cannot delete yourself' });
     
-    // Cleanup dependencies manually (usually CASCADE handles this if Prisma is configured)
-    await prisma.lessonProgress.deleteMany({ where: { userId: req.params.id } });
-    await prisma.quizAttempt.deleteMany({ where: { userId: req.params.id } });
-    await prisma.review.deleteMany({ where: { userId: req.params.id } });
-    await prisma.enrollment.deleteMany({ where: { userId: req.params.id } });
+    // 🛡️ High-Fidelity Atomic Purge Protocol
+    await prisma.$transaction([
+      // 1. Cleanup Learner Footprint
+      prisma.lessonProgress.deleteMany({ where: { userId: id } }),
+      prisma.quizAttempt.deleteMany({ where: { userId: id } }),
+      prisma.review.deleteMany({ where: { userId: id } }),
+      prisma.enrollment.deleteMany({ where: { userId: id } }),
+      prisma.payment.deleteMany({ where: { userId: id } }),
+      
+      // 2. Cleanup Social & Communication Discovery
+      prisma.notification.deleteMany({ where: { userId: id } }),
+      prisma.follow.deleteMany({ where: { 
+        OR: [{ followerId: id }, { followingId: id }] 
+      } }),
 
-    await prisma.user.delete({ where: { id: req.params.id } });
-    res.json({ success: true });
+      // 3. Optional: Cleanup Instructor Footprint
+      // This will cascade delete lessons, quizzes through Course relation (if config allows)
+      // Note: If courses have other students, deleting the course might be destructive.
+      // But for a total purge, we clear the curriculum links.
+      prisma.course.deleteMany({ where: { instructorId: id } }),
+
+      // 4. Final Solution: User Dissolution
+      prisma.user.delete({ where: { id: id } })
+    ]);
+
+    console.log(`[PURGE_STATION] User ${id} dissolution finalized successfully.`);
+    res.json({ success: true, message: 'User and all associated signatures purged.' });
   } catch (error) {
-    console.error('Delete user error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('[PURGE_FAILURE] User dissolution collapsed:', error.message);
+    res.status(500).json({ 
+      message: 'Failed to purge user. They may have active curriculum associations that require manual oversight.',
+      details: error.message 
+    });
   }
 });
 

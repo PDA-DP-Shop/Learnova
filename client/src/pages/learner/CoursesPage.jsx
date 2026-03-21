@@ -2,14 +2,16 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  BookOpen, Users, Star, Play, Lock, ShoppingCart, HelpCircle,
+  BookOpen, Users, Star, Play, Lock, ShoppingCart, HelpCircle, Clock,
   Search, Filter, Sparkles, Trophy, Globe, Zap, ArrowRight, GraduationCap, CheckCircle
 } from 'lucide-react'
 import LearnerLayout from '../../components/layout/LearnerLayout'
 import Spinner from '../../components/ui/Spinner'
 import { courseAPI, enrollmentAPI } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
+import { formatDuration } from '../../utils/time'
 import toast from 'react-hot-toast'
+
 
 const container = {
   hidden: { opacity: 0 },
@@ -115,9 +117,9 @@ const CourseCard = ({ course, enrollment, onEnroll }) => {
               <BookOpen size={12} className="text-[#714B67]" />
               {course._count?.lessons || 0} Lessons
             </span>
-            <span className="flex items-center gap-1 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-lg text-emerald-600">
-              <Zap size={11} className="fill-emerald-600" />
-              {course.rewardXP || 500} XP
+            <span className="flex items-center gap-1 border-l border-slate-200 pl-3">
+              <Clock size={12} className="text-[#017E84]" />
+              {formatDuration(course.totalDuration || 0)}
             </span>
           </div>
           {avgRating && (
@@ -241,9 +243,9 @@ const CoursesPage = () => {
                   initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
                   className="text-5xl sm:text-6xl lg:text-7xl font-black font-sora tracking-tighter text-slate-900 leading-[1.05] mb-6"
                 >
-                  Architect your <br className="hidden sm:block" />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#017E84] via-teal-500 to-[#714B67] drop-shadow-sm">
-                    Evolution.
+                  Upgrade your Skill, <br className="hidden sm:block" />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#017E84] via-teal-500 to-[#714B67] drop-shadow-sm mt-4" >
+                    with Learnova.
                   </span>
                 </motion.h1>
 

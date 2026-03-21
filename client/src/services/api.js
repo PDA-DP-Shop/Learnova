@@ -49,9 +49,10 @@ export const courseAPI = {
 // ─── Lessons ──────────────────────────────────────────────────────────────────
 export const lessonAPI = {
   list: (courseId) => api.get(`/courses/${courseId}/lessons`),
-  create: (courseId, formData) => api.post(`/courses/${courseId}/lessons`, formData),
-  update: (id, formData) => api.put(`/lessons/${id}`, formData),
+  create: (courseId, formData) => api.post(`/courses/${courseId}/lessons`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  update: (id, formData) => api.put(`/lessons/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   delete: (id) => api.delete(`/lessons/${id}`),
+  getQuiz: (id) => api.get(`/lessons/${id}/quiz`),
   addAttachment: (id, data) => api.post(`/lessons/${id}/attachments`, data),
   deleteAttachment: (id, attachmentId) => api.delete(`/lessons/${id}/attachments/${attachmentId}`),
 }
@@ -79,7 +80,7 @@ export const quizAPI = {
 
 // ─── Enrollments ──────────────────────────────────────────────────────────────
 export const enrollmentAPI = {
-  enroll: (courseId) => api.post('/enrollments', { courseId }),
+  enroll: (courseId, simulated = false) => api.post('/enrollments', { courseId, simulated }),
   myEnrollments: () => api.get('/enrollments/my'),
   complete: (courseId) => api.put(`/enrollments/${courseId}/complete`),
   updateTime: (courseId, deltaSeconds) => api.put(`/enrollments/${courseId}/time`, { deltaSeconds }),
@@ -100,6 +101,14 @@ export const reviewAPI = {
 // ─── Reporting ────────────────────────────────────────────────────────────────
 export const reportingAPI = {
   get: (params) => api.get('/reporting', { params }),
+}
+
+// ─── Payments ─────────────────────────────────────────────────────────────────
+export const paymentAPI = {
+  fakeProcess: (data) => api.post('/payments/fake-process', data),
+  getHistory: () => api.get('/payments/my-history'),
+  getInstructorHistory: () => api.get('/payments/instructor/history'),
+  getInstructorStats: () => api.get('/payments/instructor/stats'),
 }
 
 // ─── Users (Community) ────────────────────────────────────────────────────────

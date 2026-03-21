@@ -41,7 +41,20 @@ const getQuiz = async (req, res) => {
       },
     });
     if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
-    res.json(quiz);
+
+    // Include user's attempts if authenticated
+    let userAttempts = [];
+    if (req.user) {
+      userAttempts = await prisma.quizAttempt.findMany({
+        where: { userId: req.user.id, quizId: req.params.id },
+        orderBy: { completedAt: 'desc' },
+      });
+    }
+
+    res.json({
+      ...JSON.parse(JSON.stringify(quiz)),
+      userAttempts,
+    });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -150,15 +163,29 @@ const updateRewards = async (req, res) => {
 
 const submitAttempt = async (req, res) => {
   try {
-    const { answers, timeTaken } = req.body; // { questionId: optionId }
+    const { answers, timeTaken } = req.body;
+    const { id: quizId } = req.params;
+    const userId = req.user.id;
+    
+    console.log(`[QuizSubmit] Processing quizId=${quizId} for userId=${userId}`);
+    
     const quiz = await prisma.quiz.findUnique({
-      where: { id: req.params.id },
+      where: { id: quizId },
       include: {
         questions: { include: { options: true } },
         rewards: true,
       },
     });
-    if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
+
+    if (!quiz) {
+      console.warn(`[QuizSubmit] Quiz not found: ${quizId}`);
+      return res.status(404).json({ message: 'Quiz not found' });
+    }
+
+    if (!quiz.questions || quiz.questions.length === 0) {
+      console.warn(`[QuizSubmit] Quiz has no questions: ${quizId}`);
+      return res.json({ score: 0, pointsEarned: 0, totalPoints: req.user.totalPoints || 0, correct: 0, total: 0 });
+    }
 
     // Calculate score
     let correct = 0;
@@ -167,41 +194,36 @@ const submitAttempt = async (req, res) => {
       const correctOption = question.options.find((o) => o.isCorrect);
       if (correctOption && selectedOptionId === correctOption.id) correct++;
     }
-    const score = Math.round((correct / quiz.questions.length) * 100);
+    const score = Math.round((correct / quiz.questions.length) * 100) || 0;
 
     // Get attempt number
     const prevAttempts = await prisma.quizAttempt.count({
-      where: { userId: req.user.id, quizId: req.params.id },
+      where: { userId, quizId },
     });
     const attemptNo = prevAttempts + 1;
 
-    // Calculate points based on diminishing attempt multipliers AND actual performance (score)
-    const rewards = quiz.rewards;
-    let basePoints = 0;
-    if (rewards) {
-      if (attemptNo === 1) basePoints = rewards.attempt1;
-      else if (attemptNo === 2) basePoints = rewards.attempt2;
-      else if (attemptNo === 3) basePoints = rewards.attempt3;
-      else basePoints = rewards.attempt4;
-    }
+    // One-time XP logic
+    const alreadyEarned = await prisma.quizAttempt.findFirst({
+      where: { userId, quizId, pointsEarned: { gt: 0 } }
+    });
 
-    // Scale the base points by how well they performed
-    let pointsEarned = Math.round(basePoints * (score / 100));
-
-    // Dynamic reward: Perfect Score Bonus on the first attempt
-    if (score === 100 && attemptNo === 1) {
-      pointsEarned += Math.round(basePoints * 0.2); // 20% bonus for first-try perfection
-    }
-
-    // Role Guard: Only Learners earn XP. Admin/Instructor accounts are in sandbox mode.
-    if (req.user.role !== 'LEARNER') {
-      pointsEarned = 0;
+    let pointsEarned = 0;
+    if (!alreadyEarned && score === 100 && (req.user.role === 'LEARNER' || req.user.role === 'ADMIN')) {
+      const rewards = quiz.rewards;
+      if (rewards) {
+        if (attemptNo === 1) pointsEarned = rewards.attempt1;
+        else if (attemptNo === 2) pointsEarned = rewards.attempt2;
+        else if (attemptNo === 3) pointsEarned = rewards.attempt3;
+        else pointsEarned = rewards.attempt4;
+      } else {
+        pointsEarned = 10; // BASE XP if no rewards defined
+      }
     }
 
     const attempt = await prisma.quizAttempt.create({
       data: {
-        userId: req.user.id,
-        quizId: req.params.id,
+        userId,
+        quizId,
         attemptNo,
         score,
         pointsEarned,
@@ -212,15 +234,16 @@ const submitAttempt = async (req, res) => {
 
     // Add points to user
     const updatedUser = await prisma.user.update({
-      where: { id: req.user.id },
-      data: { totalPoints: { increment: pointsEarned } },
+      where: { id: userId },
+      data: { totalPoints: { increment: pointsEarned || 0 } },
       select: { totalPoints: true },
     });
 
+    console.log(`[QuizSubmit] Success: userId=${userId}, score=${score}, pointsEarned=${pointsEarned}`);
     res.json({ attempt, score, pointsEarned, totalPoints: updatedUser.totalPoints, correct, total: quiz.questions.length });
   } catch (error) {
-    console.error('submitAttempt error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('[QuizSubmit] FATAL ERROR:', error);
+    res.status(500).json({ message: error?.message || 'Server error during submission' });
   }
 };
 

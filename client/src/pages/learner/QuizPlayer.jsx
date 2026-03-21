@@ -7,6 +7,7 @@ import PointsPopup from '../../components/ui/PointsPopup'
 import Button from '../../components/ui/Button'
 import Spinner from '../../components/ui/Spinner'
 import ProgressBar from '../../components/ui/ProgressBar'
+import CelebrationOverlay from '../../components/ui/CelebrationOverlay'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
 
@@ -26,10 +27,11 @@ const QuizPlayer = () => {
   const [loading, setLoading] = useState(true)
   const [phase, setPhase] = useState(PHASE.INTRO)
   const [currentQIdx, setCurrentQIdx] = useState(0)
-  const [answers, setAnswers] = useState({}) 
+  const [answers, setAnswers] = useState({})
   const [submitting, setSubmitting] = useState(false)
-  const [result, setResult] = useState(null) 
+  const [result, setResult] = useState(null)
   const [pointsPopup, setPointsPopup] = useState(false)
+  const [showConfetti, setShowConfetti] = useState(false)
   const [timeElapsed, setTimeElapsed] = useState(0)
   const timerRef = useRef(null)
 
@@ -90,7 +92,10 @@ const QuizPlayer = () => {
         setResult(data)
         updateUser({ totalPoints: data.totalPoints })
         setPhase(PHASE.DONE)
-        setPointsPopup(true)
+        if (data.pointsEarned > 0) {
+          setPointsPopup(true)
+          if (data.score === 100) setShowConfetti(true)
+        }
       } catch (err) {
         toast.error(err?.response?.data?.message || 'Submission failed')
       } finally { setSubmitting(false) }
@@ -100,13 +105,13 @@ const QuizPlayer = () => {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-inter selection:bg-[#714B67]/10">
       {/* Dynamic Header */}
-      <motion.div 
+      <motion.div
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         className="glass-card bg-white/80 border-slate-100 px-4 sm:px-8 py-4 flex items-center gap-6 z-50 rounded-none border-t-0"
       >
-        <button 
-          onClick={() => navigate(`/courses/${courseId}`)} 
+        <button
+          onClick={() => navigate(`/courses/${courseId}`)}
           className="p-2 rounded-xl hover:bg-slate-50 text-slate-400 hover:text-slate-900 transition-all border border-transparent hover:border-slate-100 active:scale-90"
         >
           <ArrowLeft size={20} />
@@ -117,8 +122,8 @@ const QuizPlayer = () => {
             <div className="flex items-center gap-2 mt-2">
               <span className="text-[10px] font-black text-[#714B67] uppercase tracking-widest">Question {currentQIdx + 1} of {totalQ}</span>
               <div className="w-24 bg-slate-50 h-1.5 rounded-full overflow-hidden border border-slate-100">
-                <motion.div 
-                  className="bg-[#714B67] h-full" 
+                <motion.div
+                  className="bg-[#714B67] h-full"
                   initial={{ width: 0 }}
                   animate={{ width: `${(currentQIdx / totalQ) * 100}%` }}
                 />
@@ -144,7 +149,7 @@ const QuizPlayer = () => {
         <AnimatePresence mode="wait">
           {/* INTRO PHASE */}
           {phase === PHASE.INTRO && (
-            <motion.div 
+            <motion.div
               key="intro"
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -159,8 +164,13 @@ const QuizPlayer = () => {
                   {totalQ}
                 </div>
               </div>
-              
+
               <h1 className="text-3xl font-black text-slate-900 font-sora mb-4 tracking-tighter leading-tight">{quiz.title}</h1>
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 mb-8 max-w-sm mx-auto">
+                <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest leading-relaxed">
+                  ⚠️ Mastery Protocol: 100% score required to unlock XP rewards. Points are awarded once per assessment based on current attempt.
+                </p>
+              </div>
               <p className="text-slate-500 font-medium mb-8 max-w-sm mx-auto leading-relaxed">
                 Test your mastery of the material. Earn points for speed and accuracy. Ready to begin?
               </p>
@@ -177,15 +187,51 @@ const QuizPlayer = () => {
                 </div>
               )}
 
-              <Button size="xl" onClick={start} iconRight={<Play size={18} />} className="px-12 h-16 shadow-[#714B67]/10 shadow-2xl uppercase tracking-widest font-black text-xs">
+              <Button size="xl" onClick={start} iconRight={<Play size={18} />} className="px-12 h-16 shadow-[#714B67]/10 shadow-2xl uppercase tracking-widest font-black text-xs mb-12">
                 Launch Assessment
               </Button>
+
+              {/* Attempt History Section */}
+              {quiz.userAttempts?.length > 0 && (
+                <div className="mt-4 pt-12 border-t border-slate-100 text-left">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Previous Performance Registry</h3>
+                    <span className="text-[10px] font-black text-[#714B67] bg-[#714B67]/5 px-3 py-1 rounded-full border border-[#714B67]/10">
+                      {quiz.userAttempts.length} Attempt{quiz.userAttempts.length > 1 ? 's' : ''} Record
+                    </span>
+                  </div>
+
+                  <div className="space-y-3 max-h-[280px] overflow-y-auto pr-2 custom-scrollbar">
+                    {quiz.userAttempts.map((att, idx) => (
+                      <div key={att.id} className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-2xl group hover:border-[#714B67]/20 transition-all">
+                        <div className="flex items-center gap-4">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs ${att.score === 100 ? 'bg-[#017E84] text-white' : 'bg-white text-slate-400 border border-slate-100'}`}>
+                            #{quiz.userAttempts.length - idx}
+                          </div>
+                          <div>
+                            <p className="text-sm font-black text-slate-900 font-sora">{att.score}% Mastery</p>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                              {new Date(att.completedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className={`text-sm font-black font-sora ${att.pointsEarned > 0 ? 'text-[#714B67]' : 'text-slate-300'}`}>
+                            {att.pointsEarned > 0 ? `+${att.pointsEarned}` : 'Locked'}
+                          </p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">XP Reward</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </motion.div>
           )}
 
           {/* QUESTION PHASE */}
           {phase === PHASE.QUESTION && currentQ && (
-            <motion.div 
+            <motion.div
               key={currentQ.id}
               initial={{ x: 20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
@@ -207,11 +253,10 @@ const QuizPlayer = () => {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.05 }}
                       onClick={() => selectAnswer(currentQ.id, opt.id)}
-                      className={`group w-full flex items-center gap-5 p-5 rounded-3xl border-2 text-left transition-all duration-300 relative overflow-hidden ${
-                        selected
+                      className={`group w-full flex items-center gap-5 p-5 rounded-3xl border-2 text-left transition-all duration-300 relative overflow-hidden ${selected
                           ? 'border-[#714B67]/80 bg-[#714B67]/5 shadow-xl shadow-[#714B67]/5'
                           : 'border-slate-100 bg-white hover:border-[#714B67]/10 hover:bg-slate-50'
-                      }`}
+                        }`}
                     >
                       <div className={`w-10 h-10 rounded-2xl border-2 flex items-center justify-center shrink-0 transition-all font-black text-sm ${selected ? 'border-[#714B67]/80 bg-[#714B67] text-white shadow-lg shadow-[#714B67]/20' : 'border-slate-100 text-slate-300 group-hover:border-slate-200'}`}>
                         {String.fromCharCode(65 + i)}
@@ -220,8 +265,8 @@ const QuizPlayer = () => {
                         {opt.text}
                       </span>
                       {selected && (
-                        <motion.div 
-                          layoutId="active-indicator" 
+                        <motion.div
+                          layoutId="active-indicator"
                           className="w-2 h-2 rounded-full bg-[#714B67]/80 mr-2"
                         />
                       )}
@@ -245,32 +290,37 @@ const QuizPlayer = () => {
 
           {/* DONE PHASE */}
           {phase === PHASE.DONE && result && (
-            <motion.div 
+            <motion.div
               key="done"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               className="w-full max-w-xl glass-card bg-white p-8 sm:p-12 text-center shadow-xl shadow-[#714B67]/5"
             >
-              <motion.div 
+              <motion.div
                 initial={{ rotate: -10, scale: 0.5 }}
                 animate={{ rotate: 0, scale: 1 }}
                 className="w-24 h-24 rounded-3xl bg-gradient-to-br from-emerald-400/20 to-teal-600/20 flex items-center justify-center mx-auto mb-8 border border-emerald-500/20 shadow-2xl shadow-emerald-500/10"
               >
                 <Trophy size={48} className="text-emerald-500 drop-shadow-[0_0_15px_rgba(16,185,129,0.2)]" />
               </motion.div>
-              
+
               <h2 className="text-4xl font-black text-slate-900 font-sora mb-2 tracking-tighter">Assessment Complete</h2>
               <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px] mb-10">Excellent performance, Learner</p>
-                            <div className="grid grid-cols-2 gap-4 mb-10">
-                 <div className="bg-slate-50 border border-slate-100 rounded-3xl p-6 relative overflow-hidden group">
+
+              <div className="grid grid-cols-2 gap-4 mb-10">
+                <div className="bg-slate-50 border border-slate-100 rounded-3xl p-6 relative overflow-hidden group">
                   <div className="absolute top-0 right-0 p-2 opacity-5 group-hover:opacity-10 transition-opacity"><Target size={40} className="text-slate-400" /></div>
                   <p className="text-3xl sm:text-4xl font-black text-slate-900 font-sora tracking-tighter mb-1">{result.score}%</p>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Accuracy</p>
                 </div>
                 <div className="bg-[#714B67]/5 border border-[#714B67]/10 rounded-3xl p-6 relative overflow-hidden group">
                   <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity"><Award size={40} className="text-[#714B67]" /></div>
-                  <p className="text-3xl sm:text-4xl font-black text-[#714B67] font-sora tracking-tighter mb-1">+{result.pointsEarned}</p>
-                  <p className="text-[10px] font-black text-[#714B67]/50 uppercase tracking-widest">XP Earned</p>
+                  <p className="text-3xl sm:text-4xl font-black text-[#714B67] font-sora tracking-tighter mb-1">
+                    {result.pointsEarned > 0 ? `+${result.pointsEarned}` : 'Locked'}
+                  </p>
+                  <p className="text-[10px] font-black text-[#714B67]/50 uppercase tracking-widest">
+                    {result.pointsEarned > 0 ? 'XP Earned' : 'Mastery XP'}
+                  </p>
                 </div>
                 <div className="col-span-2 bg-slate-50 border border-slate-100 rounded-3xl p-6 relative overflow-hidden group flex items-center justify-between">
                   <div className="absolute top-0 right-0 p-2 opacity-5 group-hover:opacity-10 transition-opacity"><Clock size={50} className="text-slate-400 -mr-4 -mt-4" /></div>
@@ -279,7 +329,7 @@ const QuizPlayer = () => {
                 </div>
               </div>
 
-               <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 mb-10 text-xs font-medium text-slate-500">
+              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 mb-10 text-xs font-medium text-slate-500">
                 You correctly answered <span className="text-slate-900 font-black">{result.correct}</span> out of <span className="text-slate-900 font-black">{result.total}</span> questions.
               </div>
 
@@ -290,6 +340,12 @@ const QuizPlayer = () => {
             </motion.div>
           )}
         </AnimatePresence>
+
+        <CelebrationOverlay
+          isOpen={showConfetti}
+          onClose={() => setShowConfetti(false)}
+          courseTitle="Assessment Mastered!"
+        />
       </div>
 
       {/* Points Popup */}

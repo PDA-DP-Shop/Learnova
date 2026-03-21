@@ -27,6 +27,7 @@ model User {
   followers    Follow[]       @relation("Following")
   following    Follow[]       @relation("Followers")
   notifications Notification[]
+  payments     Payment[]
 }
 
 model Follow {
@@ -71,6 +72,7 @@ model Course {
   rewardXP     Int          @default(500)
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
+  payments     Payment[]
 }
 
 model Lesson {
@@ -86,6 +88,8 @@ model Lesson {
   description   String?
   order         Int              @default(0)
   attachments   Attachment[]
+  quizId        String?
+  quiz          Quiz?            @relation("LessonQuiz", fields: [quizId], references: [id])
   progress      LessonProgress[]
   createdAt     DateTime         @default(now())
 }
@@ -107,6 +111,7 @@ model Quiz {
   questions Question[]
   rewards   QuizReward?
   attempts  QuizAttempt[]
+  lessons   Lesson[]     @relation("LessonQuiz")
   createdAt DateTime     @default(now())
 }
 
@@ -163,6 +168,20 @@ model Enrollment {
   timeSpent   Int          @default(0)
   status      EnrollStatus @default(YET_TO_START)
   @@unique([userId, courseId])
+}
+
+model Payment {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  courseId   String
+  course     Course   @relation(fields: [courseId], references: [id])
+  amount     Float
+  method     String   // "card" | "upi" | "netbanking"
+  last4      String?  // last 4 digits of card (optional)
+  orderId    String   // "LRN-XXXX" format
+  status     String   @default("SUCCESS")
+  createdAt  DateTime @default(now())
 }
 
 model LessonProgress {
