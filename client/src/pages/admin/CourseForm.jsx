@@ -11,6 +11,7 @@ import Spinner from '../../components/ui/Spinner'
 import { courseAPI, lessonAPI, quizAPI } from '../../services/api'
 import toast from 'react-hot-toast'
 import { formatDuration } from '../../utils/time'
+import CourseOptionsTab from '../../components/admin/CourseOptionsTab'
 
 const LESSON_ICONS = { VIDEO: Video, DOCUMENT: FileText, IMAGE: Image, QUIZ: HelpCircle }
 const LESSON_CLASSES = { VIDEO: 'lesson-icon-video', DOCUMENT: 'lesson-icon-document', IMAGE: 'lesson-icon-image', QUIZ: 'lesson-icon-quiz' }
@@ -451,7 +452,8 @@ const CourseForm = () => {
         setLessons(data.lessons || [])
         setQuizzes(data.quizzes || [])
         setForm({
-          title: data.title, description: data.description || '', tags: (data.tags || []).join(', '),
+          title: data.title, description: data.description || '',
+          tags: data.tags || [],
           website: data.website || '', visibility: data.visibility, accessRule: data.accessRule, price: data.price || '',
           rewardXP: data.rewardXP || 500,
         })
@@ -627,44 +629,10 @@ const CourseForm = () => {
 
         {/* OPTIONS TAB */}
         {activeTab === 'options' && (
-          <div className="space-y-6 max-w-lg">
-            <div>
-              <label className="block text-xs font-medium text-slate-400 mb-2">Tags (comma-separated)</label>
-              <input type="text" value={form.tags} onChange={(e) => set('tags')(e.target.value)} placeholder="React, JavaScript, Frontend" className="input-base" />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-2 uppercase tracking-widest">Visibility</label>
-              <div className="space-y-2">
-                {[{ v: 'EVERYONE', l: '🌍 Everyone — visible to public' }, { v: 'SIGNED_IN', l: '🔒 Signed In — only logged-in users' }].map(({ v, l }) => (
-                  <label key={v} className={`radio-card bg-white border-slate-100 ${form.visibility === v ? 'selected border-indigo-500 bg-indigo-50' : ''}`}>
-                    <input type="radio" className="sr-only" checked={form.visibility === v} onChange={() => set('visibility')(v)} />
-                    <span className={`text-sm font-medium ${form.visibility === v ? 'text-indigo-600' : 'text-slate-600'}`}>{l}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-400 mb-2">Access Rule</label>
-              <div className="space-y-2">
-                {[
-                  { v: 'OPEN', l: '🔓 Open — anyone can join' },
-                  { v: 'ON_INVITATION', l: '📋 On Invitation — must be added by instructor' },
-                  { v: 'ON_PAYMENT', l: '💳 On Payment — purchase required' },
-                ].map(({ v, l }) => (
-                  <label key={v} className={`radio-card bg-white border-slate-100 ${form.accessRule === v ? 'selected border-indigo-500 bg-indigo-50' : ''}`}>
-                    <input type="radio" className="sr-only" checked={form.accessRule === v} onChange={() => set('accessRule')(v)} />
-                    <span className={`text-sm font-medium ${form.accessRule === v ? 'text-indigo-600' : 'text-slate-600'}`}>{l}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            {form.accessRule === 'ON_PAYMENT' && (
-              <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1.5">Price (INR)</label>
-                <input type="number" min="0" step="0.01" value={form.price} onChange={(e) => set('price')(e.target.value)} placeholder="29.99" className="input-base w-40" />
-              </div>
-            )}
-          </div>
+          <CourseOptionsTab
+            courseData={form}
+            onChange={(field, value) => setForm(f => ({ ...f, [field]: value }))}
+          />
         )}
 
         {/* FINAL ASSESSMENT TAB */}
