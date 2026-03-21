@@ -1,19 +1,19 @@
 const Tabs = ({ tabs, activeTab, onChange, className = '' }) => {
   return (
-    <div className={`flex gap-1 border-b border-white/8 ${className}`}>
+    <div className={`flex gap-1 border-b border-slate-100 ${className}`}>
       {tabs.map((tab) => (
         <button
           key={tab.id}
           onClick={() => onChange(tab.id)}
-          className={`relative px-4 py-2.5 text-sm font-medium transition-all duration-150 ${
+          className={`relative px-6 py-4 text-xs font-black uppercase tracking-widest transition-all duration-300 ${
             activeTab === tab.id
-              ? 'text-indigo-400'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'text-odoo'
+              : 'text-slate-400 hover:text-slate-900'
           }`}
         >
           {tab.label}
           {activeTab === tab.id && (
-            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-500 rounded-full" />
+            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-odoo rounded-full shadow-[0_0_8px_rgba(113,75,103,0.3)]" />
           )}
         </button>
       ))}

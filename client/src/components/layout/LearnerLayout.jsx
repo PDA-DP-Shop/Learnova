@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 
 const LearnerLayout = ({ children }) => {
   return (
-    <div className="min-h-screen bg-navy-900">
+    <div className="min-h-screen bg-white">
       <LearnerNavbar />
       <motion.main
         initial={{ opacity: 0, y: 8 }}

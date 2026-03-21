@@ -150,7 +150,7 @@ const updateRewards = async (req, res) => {
 
 const submitAttempt = async (req, res) => {
   try {
-    const { answers } = req.body; // { questionId: optionId }
+    const { answers, timeTaken } = req.body; // { questionId: optionId }
     const quiz = await prisma.quiz.findUnique({
       where: { id: req.params.id },
       include: {
@@ -175,14 +175,27 @@ const submitAttempt = async (req, res) => {
     });
     const attemptNo = prevAttempts + 1;
 
-    // Calculate points
+    // Calculate points based on diminishing attempt multipliers AND actual performance (score)
     const rewards = quiz.rewards;
-    let pointsEarned = 0;
+    let basePoints = 0;
     if (rewards) {
-      if (attemptNo === 1) pointsEarned = rewards.attempt1;
-      else if (attemptNo === 2) pointsEarned = rewards.attempt2;
-      else if (attemptNo === 3) pointsEarned = rewards.attempt3;
-      else pointsEarned = rewards.attempt4;
+      if (attemptNo === 1) basePoints = rewards.attempt1;
+      else if (attemptNo === 2) basePoints = rewards.attempt2;
+      else if (attemptNo === 3) basePoints = rewards.attempt3;
+      else basePoints = rewards.attempt4;
+    }
+
+    // Scale the base points by how well they performed
+    let pointsEarned = Math.round(basePoints * (score / 100));
+
+    // Dynamic reward: Perfect Score Bonus on the first attempt
+    if (score === 100 && attemptNo === 1) {
+      pointsEarned += Math.round(basePoints * 0.2); // 20% bonus for first-try perfection
+    }
+
+    // Role Guard: Only Learners earn XP. Admin/Instructor accounts are in sandbox mode.
+    if (req.user.role !== 'LEARNER') {
+      pointsEarned = 0;
     }
 
     const attempt = await prisma.quizAttempt.create({
@@ -193,6 +206,7 @@ const submitAttempt = async (req, res) => {
         score,
         pointsEarned,
         answers,
+        timeTaken: parseInt(timeTaken) || 0,
       },
     });
 

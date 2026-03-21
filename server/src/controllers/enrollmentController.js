@@ -62,14 +62,51 @@ const getMyEnrollments = async (req, res) => {
 
 const completeCourse = async (req, res) => {
   try {
+    const existing = await prisma.enrollment.findUnique({
+      where: { userId_courseId: { userId: req.user.id, courseId: req.params.id || req.params.courseId } },
+      include: { course: true }
+    });
+
+    if (!existing) return res.status(404).json({ message: 'Enrollment not found' });
+    if (existing.status === 'COMPLETED') return res.json({ enrollment: existing, pointsEarned: 0 });
+
+    const pointsEarned = 0; // Removed course completion XP per user request
+
     const enrollment = await prisma.enrollment.update({
-      where: { userId_courseId: { userId: req.user.id, courseId: req.params.courseId } },
+      where: { userId_courseId: { userId: req.user.id, courseId: req.params.id || req.params.courseId } },
       data: { status: 'COMPLETED', completedAt: new Date() },
     });
-    res.json(enrollment);
+
+    const updatedUser = await prisma.user.findUnique({ where: { id: req.user.id }, select: { totalPoints: true } });
+
+    res.json({ enrollment, pointsEarned, totalPoints: updatedUser.totalPoints });
   } catch (error) {
+    console.error('completeCourse error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
-module.exports = { enroll, getMyEnrollments, completeCourse };
+const updateTimeSpent = async (req, res) => {
+  try {
+    const { deltaSeconds } = req.body;
+    const courseId = req.params.courseId || req.params.id;
+
+    const existing = await prisma.enrollment.findUnique({
+      where: { userId_courseId: { userId: req.user.id, courseId } },
+    });
+
+    if (!existing) return res.status(404).json({ message: 'Enrollment not found' });
+
+    const enrollment = await prisma.enrollment.update({
+      where: { userId_courseId: { userId: req.user.id, courseId } },
+      data: { timeSpent: { increment: Math.max(0, parseInt(deltaSeconds) || 0) } },
+    });
+
+    res.json(enrollment);
+  } catch (error) {
+    console.error('updateTimeSpent error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { enroll, getMyEnrollments, completeCourse, updateTimeSpent };

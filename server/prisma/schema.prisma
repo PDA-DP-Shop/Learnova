@@ -16,6 +16,7 @@ model User {
   email        String         @unique
   password     String
   role         Role           @default(LEARNER)
+  isActive     Boolean        @default(true)
   totalPoints  Int            @default(0)
   avatar       String?
   createdAt    DateTime       @default(now())
@@ -23,6 +24,31 @@ model User {
   reviews      Review[]
   quizAttempts QuizAttempt[]
   courses      Course[]       @relation("InstructorCourses")
+  followers    Follow[]       @relation("Following")
+  following    Follow[]       @relation("Followers")
+  notifications Notification[]
+}
+
+model Follow {
+  id          String   @id @default(uuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower    User     @relation("Followers", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message   String
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
 }
 
 model Course {
@@ -42,6 +68,7 @@ model Course {
   quizzes      Quiz[]
   enrollments  Enrollment[]
   reviews      Review[]
+  rewardXP     Int          @default(500)
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 }
@@ -120,6 +147,7 @@ model QuizAttempt {
   score        Int
   pointsEarned Int      @default(0)
   answers      Json?
+  timeTaken    Int      @default(0)
   completedAt  DateTime @default(now())
 }
 

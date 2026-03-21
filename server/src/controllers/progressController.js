@@ -5,10 +5,15 @@ const prisma = new PrismaClient();
 const markLessonComplete = async (req, res) => {
   try {
     const { lessonId } = req.body;
-    const lesson = await prisma.lesson.findUnique({ where: { id: lessonId }, select: { courseId: true } });
+    const lesson = await prisma.lesson.findUnique({ 
+      where: { id: lessonId }, 
+      select: { courseId: true, type: true, duration: true } 
+    });
     if (!lesson) return res.status(404).json({ message: 'Lesson not found' });
 
-    const progress = await prisma.lessonProgress.upsert({
+    let pointsEarned = 0; // Removed XP reward for lessons per user request
+
+    const progressResult = await prisma.lessonProgress.upsert({
       where: { userId_lessonId: { userId: req.user.id, lessonId } },
       update: { isCompleted: true, completedAt: new Date() },
       create: { userId: req.user.id, lessonId, isCompleted: true, completedAt: new Date() },
@@ -35,7 +40,16 @@ const markLessonComplete = async (req, res) => {
       },
     });
 
-    res.json({ progress, completedLessons, totalLessons, allCompleted: completedLessons >= totalLessons });
+    const updatedUser = await prisma.user.findUnique({ where: { id: req.user.id }, select: { totalPoints: true } });
+
+    res.json({ 
+      progress: progressResult, 
+      completedLessons, 
+      totalLessons, 
+      allCompleted: completedLessons >= totalLessons,
+      pointsEarned,
+      totalPoints: updatedUser.totalPoints
+    });
   } catch (error) {
     console.error('markLessonComplete error:', error);
     res.status(500).json({ message: 'Server error' });

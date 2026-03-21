@@ -17,6 +17,10 @@ export default {
           600: '#4F46E5',
           700: '#4338CA',
         },
+        odoo: '#714B67',
+        'odoo-light': '#875A7B',
+        'odoo-dark': '#54384c',
+        'odoo-teal': '#017E84',
         amber: {
           400: '#FBBF24',
           500: '#F59E0B',

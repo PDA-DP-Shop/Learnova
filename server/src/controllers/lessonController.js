@@ -70,6 +70,7 @@ const updateLesson = async (req, res) => {
     if (allowDownload !== undefined) updateData.allowDownload = allowDownload === 'true' || allowDownload === true;
     if (order !== undefined) updateData.order = parseInt(order);
     if (fileUrl) updateData.fileUrl = fileUrl;
+    else if (req.body.deleteFile === 'true' || req.body.deleteFile === true) updateData.fileUrl = null;
 
     const lesson = await prisma.lesson.update({
       where: { id: req.params.id },

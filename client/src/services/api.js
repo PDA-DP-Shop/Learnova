@@ -49,11 +49,18 @@ export const courseAPI = {
 // ─── Lessons ──────────────────────────────────────────────────────────────────
 export const lessonAPI = {
   list: (courseId) => api.get(`/courses/${courseId}/lessons`),
-  create: (courseId, formData) => api.post(`/courses/${courseId}/lessons`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
-  update: (id, formData) => api.put(`/lessons/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  create: (courseId, formData) => api.post(`/courses/${courseId}/lessons`, formData),
+  update: (id, formData) => api.put(`/lessons/${id}`, formData),
   delete: (id) => api.delete(`/lessons/${id}`),
   addAttachment: (id, data) => api.post(`/lessons/${id}/attachments`, data),
   deleteAttachment: (id, attachmentId) => api.delete(`/lessons/${id}/attachments/${attachmentId}`),
+}
+
+// ─── Admin Users ──────────────────────────────────────────────────────────────
+export const adminUsersAPI = {
+  list: () => api.get('/users'),
+  toggleStatus: (id, data) => api.patch(`/users/${id}/toggle-status`, data),
+  delete: (id) => api.delete(`/users/${id}`),
 }
 
 // ─── Quizzes ──────────────────────────────────────────────────────────────────
@@ -75,6 +82,7 @@ export const enrollmentAPI = {
   enroll: (courseId) => api.post('/enrollments', { courseId }),
   myEnrollments: () => api.get('/enrollments/my'),
   complete: (courseId) => api.put(`/enrollments/${courseId}/complete`),
+  updateTime: (courseId, deltaSeconds) => api.put(`/enrollments/${courseId}/time`, { deltaSeconds }),
 }
 
 // ─── Progress ─────────────────────────────────────────────────────────────────
@@ -92,6 +100,14 @@ export const reviewAPI = {
 // ─── Reporting ────────────────────────────────────────────────────────────────
 export const reportingAPI = {
   get: (params) => api.get('/reporting', { params }),
+}
+
+// ─── Users (Community) ────────────────────────────────────────────────────────
+export const userAPI = {
+  toggleFollow: (id) => api.post(`/users/${id}/follow`),
+  getProfile: (id) => api.get(`/users/${id}/profile`),
+  getNotifications: () => api.get(`/users/me/notifications`),
+  markNotificationsRead: () => api.patch(`/users/me/notifications/read`)
 }
 
 export default api

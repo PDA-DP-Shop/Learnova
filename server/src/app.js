@@ -53,6 +53,7 @@ app.use('/api/courses', courseRoutes);
 app.use('/api/enrollments', enrollmentRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/reporting', reportingRoutes);
+app.use('/api/users', require('./routes/users'));
 
 // Course-scoped lessons
 app.get('/api/courses/:courseId/lessons', authenticate, getLessons);

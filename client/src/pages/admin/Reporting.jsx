@@ -44,10 +44,10 @@ const Reporting = () => {
   })
 
   const stats = [
-    { key: null, label: 'Total', count: data.stats.total, color: 'border-indigo-500/30 bg-indigo-500/8', textColor: 'text-indigo-400' },
-    { key: 'YET_TO_START', label: 'Yet to Start', count: data.stats.yetToStart, color: 'border-slate-500/30 bg-slate-500/5', textColor: 'text-slate-400' },
-    { key: 'IN_PROGRESS', label: 'In Progress', count: data.stats.inProgress, color: 'border-amber-500/30 bg-amber-500/8', textColor: 'text-amber-400' },
-    { key: 'COMPLETED', label: 'Completed', count: data.stats.completed, color: 'border-emerald-500/30 bg-emerald-500/8', textColor: 'text-emerald-400' },
+    { key: null, label: 'Total Learners', count: data.stats.total, color: 'border-odoo/20 bg-odoo/5', textColor: 'text-odoo' },
+    { key: 'YET_TO_START', label: 'Draft Mode', count: data.stats.yetToStart, color: 'border-slate-100 bg-slate-50', textColor: 'text-slate-400' },
+    { key: 'IN_PROGRESS', label: 'Active Session', count: data.stats.inProgress, color: 'border-amber-100 bg-amber-50', textColor: 'text-amber-600' },
+    { key: 'COMPLETED', label: 'Mastery Achieved', count: data.stats.completed, color: 'border-emerald-100 bg-emerald-50', textColor: 'text-emerald-600' },
   ]
 
   const col = (id) => visibleCols.includes(id)
@@ -57,10 +57,10 @@ const Reporting = () => {
       <div className="p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-slate-100 font-sora">Reporting</h1>
+          <h1 className="text-2xl font-bold text-slate-900 font-sora">Reporting</h1>
           <div className="flex items-center gap-2">
             <SearchInput value={search} onChange={setSearch} placeholder="Search name or course…" className="w-56" />
-            <button onClick={() => setPanelOpen(true)} className="flex items-center gap-1.5 px-3 py-2 text-sm text-slate-400 hover:text-slate-200 border border-white/10 rounded-lg hover:border-white/20 transition-colors">
+            <button onClick={() => setPanelOpen(true)} className="flex items-center gap-1.5 px-3 py-2 text-sm text-slate-500 hover:text-slate-900 border border-slate-200 rounded-lg hover:border-slate-300 transition-colors bg-white shadow-sm">
               <SlidersHorizontal size={14} />
               Columns
             </button>
@@ -73,10 +73,10 @@ const Reporting = () => {
             <button
               key={label}
               onClick={() => setStatusFilter(statusFilter === key ? null : key)}
-              className={`text-left p-4 rounded-xl border transition-all duration-200 ${color} ${statusFilter === key ? 'ring-1 ring-offset-0' : 'hover:opacity-90'}`}
+              className={`text-left p-6 rounded-2xl border transition-all duration-300 ${color} ${statusFilter === key ? 'ring-2 ring-offset-2' : 'hover:scale-[1.02] shadow-sm hover:shadow-lg'}`}
             >
-              <p className="text-xs text-slate-400 mb-1">{label}</p>
-              <p className={`text-3xl font-bold font-sora ${textColor}`}>{count}</p>
+              <p className="text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest leading-none">{label}</p>
+              <p className={`text-3xl font-black font-sora ${textColor}`}>{count}</p>
             </button>
           ))}
         </div>
@@ -84,10 +84,10 @@ const Reporting = () => {
         {loading ? (
           <div className="flex justify-center py-20"><Spinner size="lg" /></div>
         ) : (
-          <div className="bg-navy-800 border border-white/10 rounded-xl overflow-x-auto">
+          <div className="bg-white border border-slate-200 rounded-2xl overflow-x-auto shadow-sm">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-white/8 text-slate-400 text-xs">
+                <tr className="border-b border-slate-100 text-slate-400 text-[10px] font-black uppercase tracking-widest bg-slate-50/50">
                   {col('srNo') && <th className="text-left px-4 py-3 font-medium w-12">#</th>}
                   {col('course') && <th className="text-left px-4 py-3 font-medium">Course</th>}
                   {col('participant') && <th className="text-left px-4 py-3 font-medium">Participant</th>}
@@ -101,14 +101,14 @@ const Reporting = () => {
               </thead>
               <tbody>
                 {filtered.map((e, i) => (
-                  <tr key={e.id} className="border-b border-white/5 hover:bg-white/2 transition-colors">
-                    {col('srNo') && <td className="px-4 py-3 text-slate-500">{i + 1}</td>}
-                    {col('course') && <td className="px-4 py-3 font-medium text-slate-200">{e.course?.title}</td>}
+                  <tr key={e.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                    {col('srNo') && <td className="px-4 py-4 text-slate-400 font-medium">{i + 1}</td>}
+                    {col('course') && <td className="px-4 py-4 font-black text-slate-900 font-sora">{e.course?.title}</td>}
                     {col('participant') && (
                       <td className="px-4 py-3">
                         <div>
-                          <p className="text-slate-200">{e.user?.name}</p>
-                          <p className="text-xs text-slate-500">{e.user?.email}</p>
+                          <p className="text-slate-900 font-bold">{e.user?.name}</p>
+                          <p className="text-[10px] text-slate-400 font-medium">{e.user?.email}</p>
                         </div>
                       </td>
                     )}
@@ -117,18 +117,18 @@ const Reporting = () => {
                     {col('timeSpent') && <td className="px-4 py-3 text-center text-slate-400">{e.timeSpent}m</td>}
                     {col('completion') && (
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-2 justify-center">
-                          <div className="w-16 h-1.5 bg-navy-700 rounded-full overflow-hidden">
-                            <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${e.completionPercent || 0}%` }} />
+                        <div className="flex items-center gap-3 justify-center">
+                          <div className="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+                            <div className="h-full bg-odoo-teal rounded-full" style={{ width: `${e.completionPercent || 0}%` }} />
                           </div>
-                          <span className="text-xs text-slate-400">{e.completionPercent || 0}%</span>
+                          <span className="text-[10px] font-black text-slate-900">{e.completionPercent || 0}%</span>
                         </div>
                       </td>
                     )}
                     {col('completedDate') && <td className="px-4 py-3 text-slate-400">{formatDate(e.completedAt)}</td>}
                     {col('status') && (
                       <td className="px-4 py-3 text-center">
-                        <Badge variant={e.status === 'COMPLETED' ? 'green' : e.status === 'IN_PROGRESS' ? 'indigo' : 'slate'} dot>
+                        <Badge variant={e.status === 'COMPLETED' ? 'green' : e.status === 'IN_PROGRESS' ? 'odoo' : 'slate'} dot>
                           {getStatusLabel(e.status)}
                         </Badge>
                       </td>
@@ -145,17 +145,17 @@ const Reporting = () => {
       {/* Column Customizer Panel */}
       {panelOpen && (
         <>
-          <div className="fixed inset-0 z-30 bg-black/30" onClick={() => setPanelOpen(false)} />
-          <div className="fixed right-0 top-0 h-full w-72 bg-navy-800 border-l border-white/10 z-40 p-5 animate-slide-in-right">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="font-semibold text-slate-200">Customize Columns</h3>
-              <button onClick={() => setPanelOpen(false)} className="text-slate-500 hover:text-slate-300">
+          <div className="fixed inset-0 z-30 bg-slate-900/10 backdrop-blur-sm" onClick={() => setPanelOpen(false)} />
+          <div className="fixed right-0 top-0 h-full w-80 bg-white border-l border-slate-200 z-40 p-8 shadow-2xl animate-slide-in-right">
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="text-lg font-black text-slate-900 font-sora tracking-tighter">Surface Config</h3>
+              <button onClick={() => setPanelOpen(false)} className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-900 border border-slate-100 transition-all">
                 <X size={16} />
               </button>
             </div>
             <div className="space-y-2">
               {ALL_COLUMNS.map((col) => (
-                <label key={col.id} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-white/5 cursor-pointer">
+                <label key={col.id} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 cursor-pointer group transition-all">
                   <input
                     type="checkbox"
                     checked={visibleCols.includes(col.id)}
@@ -163,9 +163,9 @@ const Reporting = () => {
                       if (e.target.checked) setVisibleCols((v) => [...v, col.id])
                       else setVisibleCols((v) => v.filter((c) => c !== col.id))
                     }}
-                    className="w-4 h-4 rounded border-white/20 bg-navy-700 text-indigo-500 focus:ring-indigo-500"
+                    className="w-5 h-5 rounded-lg border-slate-200 bg-white text-odoo focus:ring-odoo focus:ring-offset-0 transition-all"
                   />
-                  <span className="text-sm text-slate-300">{col.label}</span>
+                  <span className="text-sm font-bold text-slate-500 group-hover:text-slate-900 transition-colors">{col.label}</span>
                 </label>
               ))}
             </div>

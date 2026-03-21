@@ -6,15 +6,15 @@ const Spinner = ({ size = 'md', className = '' }) => {
     xl:  'w-16 h-16 border-4',
   }
   return (
-    <div className={`${sizes[size] || sizes.md} border-indigo-500 border-t-transparent rounded-full animate-spin ${className}`} />
+    <div className={`${sizes[size] || sizes.md} border-odoo border-t-transparent rounded-full animate-spin ${className}`} />
   )
 }
 
 export const LoadingScreen = () => (
-  <div className="min-h-screen bg-navy-900 flex items-center justify-center">
+  <div className="min-h-screen bg-white flex items-center justify-center">
     <div className="flex flex-col items-center gap-4">
       <Spinner size="xl" />
-      <p className="text-slate-400 text-sm">Loading Learnova…</p>
+      <p className="text-odoo font-black uppercase tracking-[0.3em] text-[10px]">Portal Initialization…</p>
     </div>
   </div>
 )

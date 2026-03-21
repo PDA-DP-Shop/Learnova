@@ -35,7 +35,7 @@ const getPublicCourses = async (req, res) => {
       where,
       include: {
         instructor: { select: { id: true, name: true } },
-        _count: { select: { lessons: true, enrollments: true } },
+        _count: { select: { lessons: true, enrollments: true, quizzes: true } },
         reviews: { select: { rating: true } },
       },
       orderBy: { createdAt: 'desc' },
@@ -49,11 +49,15 @@ const getPublicCourses = async (req, res) => {
 // POST /api/courses - create course
 const createCourse = async (req, res) => {
   try {
-    const { title } = req.body;
+    const { title, rewardXP } = req.body;
     if (!title) return res.status(400).json({ message: 'Title is required' });
 
     const course = await prisma.course.create({
-      data: { title, instructorId: req.user.id },
+      data: { 
+        title, 
+        instructorId: req.user.id,
+        rewardXP: parseInt(rewardXP) || 500
+      },
     });
     res.status(201).json(course);
   } catch (error) {
@@ -84,7 +88,7 @@ const getCourse = async (req, res) => {
 // PUT /api/courses/:id - update course
 const updateCourse = async (req, res) => {
   try {
-    const { title, description, tags, website, visibility, accessRule, price, isPublished } = req.body;
+    const { title, description, tags, website, visibility, accessRule, price, isPublished, rewardXP } = req.body;
     let coverImage;
 
     if (req.files && req.files.coverImage) {
@@ -100,6 +104,7 @@ const updateCourse = async (req, res) => {
     if (accessRule !== undefined) updateData.accessRule = accessRule;
     if (price !== undefined) updateData.price = price ? parseFloat(price) : null;
     if (isPublished !== undefined) updateData.isPublished = isPublished === 'true' || isPublished === true;
+    if (rewardXP !== undefined) updateData.rewardXP = parseInt(rewardXP) || 500;
     if (coverImage) updateData.coverImage = coverImage;
 
     const course = await prisma.course.update({
@@ -132,6 +137,23 @@ const togglePublish = async (req, res) => {
       where: { id: req.params.id },
       data: { isPublished: !course.isPublished },
     });
+    
+    // Notify followers if publishing
+    if (updated.isPublished) {
+      const instructor = await prisma.user.findUnique({
+        where: { id: updated.instructorId },
+        include: { followers: true }
+      });
+      if (instructor && instructor.followers.length > 0) {
+        const notifications = instructor.followers.map(f => ({
+          userId: f.followerId,
+          message: `${instructor.name} compiled a new course: ${updated.title}!`,
+          link: `/courses/${updated.id}`
+        }));
+        await prisma.notification.createMany({ data: notifications });
+      }
+    }
+    
     res.json(updated);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -158,6 +180,9 @@ const getCourseDetail = async (req, res) => {
 
     let enrollment = null;
     let lessonProgress = [];
+    let quizAttempts = [];
+    let isFollowing = false;
+    
     if (req.user) {
       enrollment = await prisma.enrollment.findUnique({
         where: { userId_courseId: { userId: req.user.id, courseId: req.params.id } },
@@ -165,9 +190,32 @@ const getCourseDetail = async (req, res) => {
       lessonProgress = await prisma.lessonProgress.findMany({
         where: { userId: req.user.id, lessonId: { in: course.lessons.map((l) => l.id) } },
       });
+      quizAttempts = await prisma.quizAttempt.findMany({
+        where: { userId: req.user.id, quizId: { in: course.quizzes.map((q) => q.id) } },
+        orderBy: { attemptNo: 'desc' },
+      });
+      const follow = await prisma.follow.findUnique({
+        where: { followerId_followingId: { followerId: req.user.id, followingId: course.instructorId } }
+      });
+      if (follow) isFollowing = true;
     }
 
-    res.json({ course, enrollment, lessonProgress });
+    const allAttempts = await prisma.quizAttempt.findMany({
+      where: { quizId: { in: course.quizzes.map((q) => q.id) } },
+      include: { user: { select: { id: true, name: true, avatar: true } }, quiz: { select: { title: true } } },
+      orderBy: [
+        { score: 'desc' },
+        { timeTaken: 'asc' },
+      ],
+    });
+
+    const userMap = new Map();
+    for (const a of allAttempts) {
+      if (!userMap.has(a.userId)) userMap.set(a.userId, a);
+    }
+    const leaderboard = Array.from(userMap.values()).slice(0, 3);
+
+    res.json({ course, enrollment, lessonProgress, quizAttempts, leaderboard, isFollowing });
   } catch (error) {
     console.error('getCourseDetail error:', error);
     res.status(500).json({ message: 'Server error' });
