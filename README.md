@@ -495,7 +495,7 @@ Built with ❤️ by **Codinity** for the 24-Hour eLearning Hackathon.
 | Name | Role |
 |---|---|
 | Devansh Patel | Frontent & Backend |
-| Mit Prajapati | Security & Privacy |
+| Mit Prajapati | Security & Frontent |
 | Udit Rana | Frontent & Backend |
 | Rudra Modi | Backend |
 
