@@ -12,7 +12,7 @@ import { courseAPI } from '../../services/api'
 import { exportCSV } from '../../utils/exportCSV'
 import toast from 'react-hot-toast'
 
-const CourseCard = ({ course, onEdit, onDelete, onShare, onView, isAdminOnly }) => {
+const CourseCard = ({ course, onEdit, onDelete, onShare, onView, onAttendees, isAdminOnly }) => {
   const totalDuration = course.lessons?.reduce((s, l) => s + (l.duration || 0), 0) || 0
   const hours = Math.floor(totalDuration / 60)
   const mins = totalDuration % 60
@@ -47,6 +47,7 @@ const CourseCard = ({ course, onEdit, onDelete, onShare, onView, isAdminOnly }) 
         ) : (
            <Button size="sm" variant="ghost" icon={<Eye size={13} />} onClick={() => onView(course.id)} className="flex-1 text-[#017E84]">View</Button>
         )}
+        <Button size="sm" variant="ghost" icon={<Users size={13} />} onClick={() => onAttendees(course.id)} className="text-[#714B67]" title="View Attendees" />
         <Button size="sm" variant="ghost" icon={<Share2 size={13} />} onClick={() => onShare(course)} />
         <Button size="sm" variant="ghost" icon={<Trash2 size={13} />} onClick={() => onDelete(course)} className="text-red-500 hover:text-red-600" />
       </div>
@@ -142,7 +143,7 @@ const CoursesDashboard = () => {
               <h3 className="text-xs font-bold text-slate-400 mb-4 uppercase tracking-widest pl-1">Draft <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full ml-1">{drafts.length}</span></h3>
               <div className="space-y-3">
                 {drafts.map((c) => (
-                    <CourseCard key={c.id} course={c} onEdit={(id) => navigate(`/admin/courses/${id}/edit`)} onView={(id) => navigate(`/courses/${id}`)} isAdminOnly={user?.role === 'ADMIN'} onDelete={setDeleteTarget} onShare={handleShare} />
+                    <CourseCard key={c.id} course={c} onEdit={(id) => navigate(`/admin/courses/${id}/edit`)} onView={(id) => navigate(`/courses/${id}`)} onAttendees={(id) => navigate(`/admin/courses/${id}/attendees`)} isAdminOnly={user?.role === 'ADMIN'} onDelete={setDeleteTarget} onShare={handleShare} />
                   ))}
                 </div>
               </div>
@@ -150,7 +151,7 @@ const CoursesDashboard = () => {
                 <h3 className="text-xs font-bold text-slate-400 mb-4 uppercase tracking-widest pl-1">Published <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full ml-1">{published.length}</span></h3>
                 <div className="space-y-3">
                   {published.map((c) => (
-                    <CourseCard key={c.id} course={c} onEdit={(id) => navigate(`/admin/courses/${id}/edit`)} onView={(id) => navigate(`/courses/${id}`)} isAdminOnly={user?.role === 'ADMIN'} onDelete={setDeleteTarget} onShare={handleShare} />
+                    <CourseCard key={c.id} course={c} onEdit={(id) => navigate(`/admin/courses/${id}/edit`)} onView={(id) => navigate(`/courses/${id}`)} onAttendees={(id) => navigate(`/admin/courses/${id}/attendees`)} isAdminOnly={user?.role === 'ADMIN'} onDelete={setDeleteTarget} onShare={handleShare} />
                   ))}
                 </div>
               </div>
@@ -184,11 +185,12 @@ const CoursesDashboard = () => {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
-                        {user?.role === 'ADMIN' ? (
+                         {user?.role === 'ADMIN' ? (
                           <Button size="sm" variant="ghost" icon={<Eye size={13} />} onClick={() => navigate(`/courses/${c.id}`)} className="text-[#017E84]" />
                         ) : (
                           <Button size="sm" variant="ghost" icon={<Edit2 size={13} />} onClick={() => navigate(`/admin/courses/${c.id}/edit`)} />
                         )}
+                        <Button size="sm" variant="ghost" icon={<Users size={13} />} onClick={() => navigate(`/admin/courses/${c.id}/attendees`)} className="text-[#714B67]" title="Attendees" />
                         <Button size="sm" variant="ghost" icon={<Share2 size={13} />} onClick={() => handleShare(c)} />
                         <Button size="sm" variant="ghost" icon={<Trash2 size={13} />} onClick={() => setDeleteTarget(c)} className="text-red-500" />
                       </div>

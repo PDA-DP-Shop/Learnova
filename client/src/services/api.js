@@ -84,6 +84,7 @@ export const enrollmentAPI = {
   myEnrollments: () => api.get('/enrollments/my'),
   complete: (courseId) => api.put(`/enrollments/${courseId}/complete`),
   updateTime: (courseId, deltaSeconds) => api.put(`/enrollments/${courseId}/time`, { deltaSeconds }),
+  getAttendees: (courseId) => api.get(`/enrollments/course/${courseId}/attendees`),
 }
 
 // ─── Progress ─────────────────────────────────────────────────────────────────

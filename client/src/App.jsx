@@ -15,6 +15,7 @@ import QuizBuilder from './pages/admin/QuizBuilder'
 import Reporting from './pages/admin/Reporting'
 import UsersDashboard from './pages/admin/UsersDashboard'
 import InstructorRevenue from './pages/admin/InstructorRevenue'
+import CourseAttendees from './pages/admin/CourseAttendees'
 
 // Learner Pages
 import CoursesPage from './pages/learner/CoursesPage'
@@ -76,6 +77,7 @@ const AnimatedRoutes = () => {
           <Route path="/admin" element={<PageWrapper><Dashboard /></PageWrapper>} />
           <Route path="/admin/courses" element={<PageWrapper><CoursesDashboard /></PageWrapper>} />
           <Route path="/admin/courses/:id/edit" element={<PageWrapper><CourseForm /></PageWrapper>} />
+          <Route path="/admin/courses/:id/attendees" element={<PageWrapper><CourseAttendees /></PageWrapper>} />
           <Route path="/admin/courses/:id/quiz/:quizId" element={<PageWrapper><QuizBuilder /></PageWrapper>} />
           <Route path="/admin/reporting" element={<PageWrapper><Reporting /></PageWrapper>} />
           <Route path="/admin/revenue" element={<PageWrapper><InstructorRevenue /></PageWrapper>} />
