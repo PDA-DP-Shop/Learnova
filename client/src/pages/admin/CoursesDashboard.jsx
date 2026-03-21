@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Grid, List, Edit2, Share2, Trash2, BookOpen, Users, Clock, Eye } from 'lucide-react'
+import { Plus, Grid, List, Edit2, Share2, Trash2, BookOpen, Users, Clock, Eye, Download } from 'lucide-react'
 import AdminLayout from '../../components/layout/AdminLayout'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/ui/Button'
@@ -9,6 +9,7 @@ import Modal from '../../components/ui/Modal'
 import SearchInput from '../../components/ui/SearchInput'
 import Spinner from '../../components/ui/Spinner'
 import { courseAPI } from '../../services/api'
+import { exportCSV } from '../../utils/exportCSV'
 import toast from 'react-hot-toast'
 
 const CourseCard = ({ course, onEdit, onDelete, onShare, onView, isAdminOnly }) => {
@@ -116,6 +117,20 @@ const CoursesDashboard = () => {
             {user?.role !== 'ADMIN' && (
                <Button onClick={() => setNewModal(true)} icon={<Plus size={16} />}>New</Button>
             )}
+            <button
+              onClick={() => exportCSV(filtered.map(c => ({
+                Title: c.title,
+                Instructor: c.instructor?.name || '',
+                Tags: (c.tags || []).join('; '),
+                Lessons: c._count?.lessons || 0,
+                Enrolled: c._count?.enrollments || 0,
+                Status: c.isPublished ? 'Published' : 'Draft',
+                'Duration (min)': c.lessons?.reduce((s, l) => s + (l.duration || 0), 0) || 0,
+              })), 'learnova_courses')}
+              className="flex items-center gap-2 h-9 px-4 bg-[#714B67] hover:bg-[#54384c] text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-sm"
+            >
+              <Download size={13} /> Export
+            </button>
           </div>
         </div>
 

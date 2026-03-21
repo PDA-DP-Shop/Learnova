@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { Trophy, Star, Sparkles, Command, ArrowRight, Award, Zap } from 'lucide-react'
+import { Trophy, Star, Sparkles, ArrowRight, Award, Download } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { generateCertificate } from '../../utils/generateCertificate'
 
 const ConfettiParticle = ({ color, x, y, delay }) => (
   <motion.div
@@ -21,7 +22,7 @@ const ConfettiParticle = ({ color, x, y, delay }) => (
   />
 )
 
-const CelebrationOverlay = ({ isOpen, onClose, courseTitle }) => {
+const CelebrationOverlay = ({ isOpen, onClose, courseTitle, userName, instructorName, completionDate }) => {
   const [particles, setParticles] = useState([])
 
   useEffect(() => {
@@ -159,9 +160,25 @@ const CelebrationOverlay = ({ isOpen, onClose, courseTitle }) => {
               <motion.button
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.75 }}
+                onClick={() => generateCertificate({
+                  userName,
+                  courseName: courseTitle,
+                  instructorName,
+                  completionDate,
+                })}
+                className="mt-10 w-full h-14 bg-white hover:bg-slate-50 text-[#714B67] border-2 border-[#714B67]/20 hover:border-[#714B67]/40 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] shadow-sm transition-all flex items-center justify-center gap-3 group pointer-events-auto active:scale-95"
+              >
+                <Download size={16} className="group-hover:-translate-y-0.5 transition-transform" />
+                Download Certificate
+              </motion.button>
+
+              <motion.button
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.8 }}
                 onClick={onClose}
-                className="mt-12 w-full h-16 bg-[#714B67] hover:bg-[#54384c] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] shadow-[0_20px_40px_rgba(113,75,103,0.3)] transition-all flex items-center justify-center gap-3 group pointer-events-auto active:scale-95 btn-shine"
+                className="mt-3 w-full h-16 bg-[#714B67] hover:bg-[#54384c] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] shadow-[0_20px_40px_rgba(113,75,103,0.3)] transition-all flex items-center justify-center gap-3 group pointer-events-auto active:scale-95 btn-shine"
               >
                 Synchronize to Dashboard
                 <ArrowRight size={16} className="group-hover:translate-x-1.5 transition-transform" />

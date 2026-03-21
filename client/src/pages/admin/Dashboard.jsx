@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { Users, BookOpen, Clock, Activity, Target, Wallet, TrendingUp } from 'lucide-react'
+import { Users, BookOpen, Clock, Activity, Target, Wallet, TrendingUp, Download } from 'lucide-react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import AdminLayout from '../../components/layout/AdminLayout'
 import { reportingAPI } from '../../services/api'
 import Spinner from '../../components/ui/Spinner'
 import { useAuth } from '../../context/AuthContext'
+import { exportCSV } from '../../utils/exportCSV'
 
 const COLORS = ['#017E84', '#F43F5E', '#10B981']
 
@@ -31,9 +32,27 @@ const AdminOverview = () => {
   return (
     <AdminLayout>
       <div className="p-6 max-w-7xl mx-auto font-inter">
-        <header className="mb-8">
-          <p className="text-[10px] font-black uppercase tracking-widest text-[#017E84] mb-1">Status Report</p>
-          <h1 className="text-3xl font-bold font-sora text-[#714B67]">Platform Overview</h1>
+        <header className="mb-8 flex items-end justify-between">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-[#017E84] mb-1">Status Report</p>
+            <h1 className="text-3xl font-bold font-sora text-[#714B67]">Platform Overview</h1>
+          </div>
+          <button
+            onClick={() => exportCSV([{
+              'Total Enrollments': stats?.platform?.totalEnrollments || 0,
+              'Active Courses': stats?.platform?.totalCourses || 0,
+              'Total Reviews': stats?.platform?.totalReviews || 0,
+              'Total Revenue (INR)': stats?.platform?.totalRevenue || 0,
+              'Network Users': stats?.platform?.totalNetworkUsers || 0,
+              'Completed': stats?.stats?.completed || 0,
+              'In Progress': stats?.stats?.inProgress || 0,
+              'Yet to Start': stats?.stats?.yetToStart || 0,
+              'Exported At': new Date().toLocaleString(),
+            }], 'learnova_platform_report')}
+            className="flex items-center gap-2 h-10 px-4 bg-[#714B67] hover:bg-[#54384c] text-white text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all shadow-sm"
+          >
+            <Download size={14} /> Export Report
+          </button>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

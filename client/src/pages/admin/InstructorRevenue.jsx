@@ -16,6 +16,7 @@ import { paymentAPI } from '../../services/api'
 import AdminLayout from '../../components/layout/AdminLayout'
 import Spinner from '../../components/ui/Spinner'
 import { useAuth } from '../../context/AuthContext'
+import { exportCSV } from '../../utils/exportCSV'
 import toast from 'react-hot-toast'
 
 const InstructorRevenue = () => {
@@ -107,6 +108,21 @@ const InstructorRevenue = () => {
                  className={`w-12 h-12 bg-white border border-slate-200 rounded-2xl flex items-center justify-center text-slate-400 hover:text-[#714B67] transition-all hover:shadow-md ${refreshing ? 'animate-spin' : ''}`}
               >
                  <RefreshCcw size={18} />
+              </button>
+              <button
+                 onClick={() => exportCSV(payments.map(p => ({
+                   'Order ID': p.orderId,
+                   Course: p.course?.title || '',
+                   'Student': p.user?.name || '',
+                   'Amount (INR)': p.amount,
+                   Method: p.method,
+                   'Last 4': p.last4 || '',
+                   Status: p.status,
+                   Date: new Date(p.createdAt).toLocaleDateString('en-IN'),
+                 })), 'learnova_revenue')}
+                 className="flex items-center gap-2 h-12 px-5 bg-[#714B67] hover:bg-[#54384c] text-white text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all shadow-sm"
+              >
+                 <Download size={14} /> Export CSV
               </button>
            </div>
         </div>

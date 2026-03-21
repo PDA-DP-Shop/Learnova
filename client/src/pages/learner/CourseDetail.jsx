@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, CheckCircle2, Clock, BookOpen, Play, FileText, Image, HelpCircle, Search, Star, MessageSquare, ShieldCheck, Sparkles, Trophy, Globe, Zap, ChevronRight, Users, Lock } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, Clock, BookOpen, Play, FileText, Image, HelpCircle, Search, Star, MessageSquare, ShieldCheck, Sparkles, Trophy, Globe, Zap, ChevronRight, Users, Lock, Download } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import LearnerLayout from '../../components/layout/LearnerLayout'
 import Tabs from '../../components/ui/Tabs'
@@ -16,6 +16,7 @@ import { formatDuration } from '../../utils/time'
 import PointsPopup from '../../components/ui/PointsPopup'
 import FakeRazorpayModal from '../../components/ui/FakeRazorpayModal'
 import { calcCompletionPercent, formatDate } from '../../utils/progress'
+import { generateCertificate } from '../../utils/generateCertificate'
 import toast from 'react-hot-toast'
 
 const LESSON_ICONS = { VIDEO: Play, DOCUMENT: FileText, IMAGE: Image, QUIZ: HelpCircle }
@@ -334,16 +335,31 @@ const CourseDetail = () => {
                   {/* Main Action */}
                   <motion.div 
                     initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }}
-                    className="shrink-0 w-full lg:w-auto"
+                    className="shrink-0 w-full lg:w-auto flex flex-col gap-3"
                   >
                     {hasAccess ? (
-                      <Link 
-                        to={`/courses/${id}/learn/${course.lessons?.[0]?.id}`}
-                        className="w-full lg:w-auto h-20 px-12 bg-[#714B67] hover:bg-[#52364A] text-white rounded-[2rem] flex items-center justify-center gap-4 transition-all duration-300 shadow-2xl shadow-[#714B67]/30 hover:-translate-y-1 active:scale-95 text-sm font-black uppercase tracking-[0.2em]"
-                      >
-                        Launch Program
-                        <Play size={18} fill="currentColor" />
-                      </Link>
+                      <>
+                        <Link 
+                          to={`/courses/${id}/learn/${course.lessons?.[0]?.id}`}
+                          className="w-full lg:w-auto h-20 px-12 bg-[#714B67] hover:bg-[#52364A] text-white rounded-[2rem] flex items-center justify-center gap-4 transition-all duration-300 shadow-2xl shadow-[#714B67]/30 hover:-translate-y-1 active:scale-95 text-sm font-black uppercase tracking-[0.2em]"
+                        >
+                          Launch Program
+                          <Play size={18} fill="currentColor" />
+                        </Link>
+                        <button
+                          onClick={() => generateCertificate({
+                            userName: user?.name,
+                            courseName: course?.title,
+                            instructorName: course?.instructor?.name,
+                            completionDate: enrollment?.completedAt || new Date().toISOString(),
+                            isParticipation: pct < 100,
+                          })}
+                          className="w-full lg:w-auto h-12 px-8 bg-white border-2 border-[#714B67]/20 hover:border-[#714B67]/50 text-[#714B67] rounded-2xl flex items-center justify-center gap-3 transition-all text-[10px] font-black uppercase tracking-widest hover:-translate-y-0.5 shadow-sm"
+                        >
+                          <Download size={14} />
+                          {pct >= 100 ? 'Certificate of Completion' : 'Certificate of Participation'}
+                        </button>
+                      </>
                     ) : (
                       <button
                         onClick={handleEnroll}

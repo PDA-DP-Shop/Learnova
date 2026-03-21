@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Users, Trash2, Mail, Shield, User, Search, Award, Ban, CheckCircle } from 'lucide-react'
+import { Users, Trash2, Mail, Shield, User, Search, Award, Ban, CheckCircle, Download } from 'lucide-react'
 import AdminLayout from '../../components/layout/AdminLayout'
 import Button from '../../components/ui/Button'
 import Badge from '../../components/ui/Badge'
@@ -7,6 +7,7 @@ import SearchInput from '../../components/ui/SearchInput'
 import Spinner from '../../components/ui/Spinner'
 import { adminUsersAPI } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
+import { exportCSV } from '../../utils/exportCSV'
 import toast from 'react-hot-toast'
 
 const UsersDashboard = () => {
@@ -91,6 +92,20 @@ const UsersDashboard = () => {
               </div>
             </div>
             <SearchInput value={search} onChange={setSearch} placeholder="Search names or emails..." className="w-full sm:w-64 h-11" />
+            <button
+              onClick={() => exportCSV(filtered.map(u => ({
+                Name: u.name,
+                Email: u.email,
+                Role: u.role,
+                'Total XP': u.totalPoints,
+                Enrollments: u._count?.enrollments || 0,
+                'Courses Published': u._count?.courses || 0,
+                Status: u.isActive ? 'Active' : 'Disabled',
+              })), 'learnova_users')}
+              className="flex items-center gap-2 h-11 px-4 bg-[#714B67] hover:bg-[#54384c] text-white text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all shadow-sm"
+            >
+              <Download size={14} /> Export CSV
+            </button>
           </div>
         </div>
 

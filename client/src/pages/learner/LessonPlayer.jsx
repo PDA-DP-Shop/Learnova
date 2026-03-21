@@ -592,6 +592,9 @@ const LessonPlayer = () => {
         isOpen={showCelebration}
         onClose={() => navigate(`/courses/${courseId}`)}
         courseTitle={course?.title}
+        userName={user?.name}
+        instructorName={course?.instructor?.name}
+        completionDate={new Date().toISOString()}
       />
     </div>
   )
