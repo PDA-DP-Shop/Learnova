@@ -253,7 +253,7 @@ const CoursesPage = () => {
                   initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
                   className="text-slate-500 text-lg sm:text-xl font-medium leading-relaxed max-w-xl mx-auto lg:mx-0 mb-10"
                 >
-                  Master elite protocol architectures. Explore immersive modules, expert curriculum, and secure credentials pushing limits.
+                  Empowering learners with interactive courses, expert guidance, and real-world skills to succeed in the digital era.
                 </motion.p>
                 
                 {/* Search Engine */}

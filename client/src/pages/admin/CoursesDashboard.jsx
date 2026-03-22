@@ -61,6 +61,7 @@ const CoursesDashboard = () => {
   const [loading, setLoading] = useState(true)
   const [view, setView] = useState('kanban') // 'kanban' | 'list'
   const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all') // 'all' | 'draft' | 'published'
   const [newModal, setNewModal] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newRewardXP, setNewRewardXP] = useState(500)
@@ -72,7 +73,16 @@ const CoursesDashboard = () => {
     courseAPI.list().then(({ data }) => setCourses(data)).catch(() => toast.error('Failed to load courses')).finally(() => setLoading(false))
   }, [])
 
-  const filtered = courses.filter((c) => c.title.toLowerCase().includes(search.toLowerCase()))
+  const filtered = courses.filter((c) => {
+    const matchesSearch = c.title.toLowerCase().includes(search.toLowerCase())
+    const matchesStatus = statusFilter === 'all' 
+      ? true 
+      : statusFilter === 'published' 
+        ? c.isPublished 
+        : !c.isPublished
+    return matchesSearch && matchesStatus
+  })
+  
   const drafts = filtered.filter((c) => !c.isPublished)
   const published = filtered.filter((c) => c.isPublished)
 
@@ -109,8 +119,17 @@ const CoursesDashboard = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <h1 className="text-2xl font-bold text-slate-900 font-sora">My Courses</h1>
-          <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
-            <SearchInput value={search} onChange={setSearch} placeholder="Search courses..." className="w-full sm:w-64" />
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <select 
+                value={statusFilter} 
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="h-9 px-4 rounded-xl border-2 border-slate-100 bg-slate-50/50 hover:bg-white hover:border-[#714B67]/30 text-[10px] font-black uppercase tracking-widest text-slate-600 shadow-sm focus:outline-none focus:ring-4 focus:ring-[#714B67]/10 transition-all cursor-pointer appearance-none min-w-[140px]"
+              >
+                <option value="all">All Status</option>
+                <option value="published">Published</option>
+                <option value="draft">Drafts</option>
+              </select>
+              <SearchInput value={search} onChange={setSearch} placeholder="Search courses..." className="w-full sm:w-64" />
             <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl">
               <Button size="sm" variant={view === 'kanban' ? 'primary' : 'ghost'} onClick={() => setView('kanban')} icon={<Grid size={15} />} />
               <Button size="sm" variant={view === 'list' ? 'primary' : 'ghost'} onClick={() => setView('list')} icon={<List size={15} />} />
