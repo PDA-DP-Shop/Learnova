@@ -509,38 +509,6 @@ Powered by **Nodemailer + Gmail SMTP**. Both emails fire automatically after pay
 
 ---
 
-## 🚀 Deployment
-
-### Frontend → Vercel
-
-```bash
-cd client
-npm run build
-# Deploy /dist to Vercel
-# Environment variable: VITE_API_URL=https://your-api.railway.app/api
-```
-
-### Backend → Railway / Render
-
-```bash
-# Add all .env variables in hosting dashboard
-npx prisma migrate deploy
-npm start
-```
-
----
-
-## 🤝 Contributing
-
-```bash
-git checkout -b feature/your-feature-name
-git commit -m "feat: your feature description"
-git push origin feature/your-feature-name
-# Open a Pull Request on GitHub
-```
-
----
-
 ## 👥 Team
 
 Built with ❤️ by **Team Codinity** — 24-Hour Odoo X Gujarat Vidhyapith Hackathon 2026
