@@ -86,7 +86,19 @@ router.post('/course/:courseId/invite', authenticate, requireRole('INSTRUCTOR', 
     // Enroll directly
     const enrollment = await prisma.enrollment.create({
       data: { userId: learner.id, courseId: req.params.courseId },
-      include: { user: { select: { id: true, name: true, email: true, avatar: true } } }
+      include: { 
+        user: { select: { id: true, name: true, email: true, avatar: true } },
+        course: { select: { title: true } }
+      }
+    });
+
+    // Notify the learner
+    await prisma.notification.create({
+      data: {
+        userId: learner.id,
+        message: `${req.user.name} invited you to join: ${enrollment.course.title}`,
+        link: `/courses/${req.params.courseId}`
+      }
     });
 
     console.log(`[Invite] ${req.user.email} invited ${learner.email} to course ${req.params.courseId}`);
@@ -98,6 +110,45 @@ router.post('/course/:courseId/invite', authenticate, requireRole('INSTRUCTOR', 
   } catch (err) {
     console.error('[Invite] Error:', err);
     res.status(500).json({ message: 'Failed to invite learner' });
+  }
+});
+
+// DELETE /api/enrollments/course/:courseId/invite/:userId — instructor removes a learner
+router.delete('/course/:courseId/invite/:userId', authenticate, requireRole('INSTRUCTOR', 'ADMIN'), async (req, res) => {
+  try {
+    const { courseId, userId } = req.params;
+
+    // Find the course
+    const course = await prisma.course.findUnique({ where: { id: courseId } });
+    if (!course) return res.status(404).json({ message: 'Course not found' });
+
+    // Only the course instructor (or admin) can remove
+    if (req.user.role !== 'ADMIN' && course.instructorId !== req.user.id) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    // Delete enrollment
+    const deleted = await prisma.enrollment.delete({
+      where: { userId_courseId: { userId, courseId } }
+    });
+
+    // Also delete lesson progress
+    await prisma.lessonProgress.deleteMany({
+      where: { userId, lessonId: { in: (await prisma.lesson.findMany({ where: { courseId }, select: { id: true } })).map(l => l.id) } }
+    });
+
+    // Notify the learner
+    await prisma.notification.create({
+      data: {
+        userId,
+        message: `${req.user.name} removed your access to: ${course.title}`,
+      }
+    });
+
+    res.json({ message: 'User removed from course' });
+  } catch (err) {
+    console.error('[Remove Enrollment] Error:', err);
+    res.status(500).json({ message: 'Failed to remove user' });
   }
 });
 

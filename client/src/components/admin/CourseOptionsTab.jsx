@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { UserPlus, Mail, CheckCircle, X, Loader2, Users, Send } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { UserPlus, Mail, CheckCircle, X, Loader2, Users, Send, Trash2 } from 'lucide-react'
 import { enrollmentAPI } from '../../services/api'
 import toast from 'react-hot-toast'
 
@@ -22,7 +22,32 @@ export default function CourseOptionsTab({ courseData, courseId, onChange }) {
   // Invite state
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviting, setInviting] = useState(false)
-  const [invited, setInvited] = useState([]) // list of successfully invited users this session
+  const [invited, setInvited] = useState([]) // All invited/enrolled users
+  const [loadingInvited, setLoadingInvited] = useState(false)
+
+  useEffect(() => {
+    if (courseId && courseData.accessRule === 'ON_INVITATION') {
+      fetchInvitedUsers()
+    }
+  }, [courseId, courseData.accessRule])
+
+  const fetchInvitedUsers = async () => {
+    setLoadingInvited(true)
+    try {
+      const { data } = await enrollmentAPI.getAttendees(courseId)
+      // Normalize data to have userId consistently
+      setInvited(data.map(u => ({
+        userId: u.userId,
+        name: u.name,
+        email: u.email,
+        avatar: u.avatar
+      })))
+    } catch (err) {
+      console.error('Failed to fetch invited users', err)
+    } finally {
+      setLoadingInvited(false)
+    }
+  }
 
   const handleTagBlur = () => {
     const tagsArray = tagInput.split(',').map(t => t.trim()).filter(Boolean)
@@ -44,7 +69,13 @@ export default function CourseOptionsTab({ courseData, courseId, onChange }) {
     setInviting(true)
     try {
       const { data } = await enrollmentAPI.invite(courseId, email)
-      setInvited(prev => [{ email, name: data.user?.name || email, ...data.user }, ...prev])
+      const newUser = {
+        userId: data.user.id,
+        name: data.user.name,
+        email: data.user.email,
+        avatar: data.user.avatar,
+      }
+      setInvited(prev => [newUser, ...prev])
       setInviteEmail('')
       toast.success(data.message || `${email} enrolled successfully!`)
     } catch (err) {
@@ -52,6 +83,18 @@ export default function CourseOptionsTab({ courseData, courseId, onChange }) {
       toast.error(msg)
     } finally {
       setInviting(false)
+    }
+  }
+
+  const handleRemove = async (userId, name) => {
+    if (!window.confirm(`Are you sure you want to remove ${name} from this course?`)) return
+    
+    try {
+      await enrollmentAPI.uninvite(courseId, userId)
+      setInvited(prev => prev.filter(u => u.userId !== userId))
+      toast.success(`${name} removed from course`)
+    } catch (err) {
+      toast.error('Failed to remove user')
     }
   }
 
@@ -202,30 +245,45 @@ export default function CourseOptionsTab({ courseData, courseId, onChange }) {
             </button>
           </div>
 
-          {/* Success list from this session */}
-          {invited.length > 0 && (
-            <div className="mt-5 space-y-2">
-              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">
-                Enrolled this session ({invited.length})
-              </p>
-              {invited.map((u, i) => (
-                <div key={i} className="flex items-center gap-3 px-4 py-3 bg-emerald-50 border border-emerald-100 rounded-2xl">
-                  {u.avatar ? (
-                    <img src={u.avatar} className="w-8 h-8 rounded-xl object-cover" alt="" />
-                  ) : (
-                    <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 font-black text-sm">
-                      {(u.name || u.email)[0].toUpperCase()}
+          {/* Invited Users List */}
+          <div className="mt-8">
+            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-4">
+              Invited Learners ({invited.length})
+            </p>
+            
+            {loadingInvited ? (
+              <div className="flex justify-center py-6"><Loader2 size={24} className="animate-spin text-[#714B67]" /></div>
+            ) : invited.length > 0 ? (
+              <div className="space-y-2">
+                {invited.map((u) => (
+                  <div key={u.userId} className="flex items-center gap-3 px-4 py-3 bg-white border border-gray-100 rounded-2xl shadow-sm group">
+                    {u.avatar ? (
+                      <img src={u.avatar} className="w-8 h-8 rounded-xl object-cover" alt="" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center text-[#714B67] font-black text-sm">
+                        {(u.name || u.email || '?')[0].toUpperCase()}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-gray-900 truncate">{u.name}</p>
+                      <p className="text-xs text-gray-500 truncate">{u.email}</p>
                     </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-emerald-800 truncate">{u.name}</p>
-                    <p className="text-xs text-emerald-600 truncate">{u.email}</p>
+                    <button 
+                      onClick={() => handleRemove(u.userId, u.name)}
+                      className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
+                      title="Remove user"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
-                  <CheckCircle size={18} className="text-emerald-500 shrink-0" />
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 border-2 border-dashed border-gray-100 rounded-3xl">
+                <p className="text-xs text-gray-400">No learners invited yet.</p>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

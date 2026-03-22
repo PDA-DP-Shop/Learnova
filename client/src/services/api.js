@@ -86,6 +86,7 @@ export const enrollmentAPI = {
   updateTime: (courseId, deltaSeconds) => api.put(`/enrollments/${courseId}/time`, { deltaSeconds }),
   getAttendees: (courseId) => api.get(`/enrollments/course/${courseId}/attendees`),
   invite: (courseId, email) => api.post(`/enrollments/course/${courseId}/invite`, { email }),
+  uninvite: (courseId, userId) => api.delete(`/enrollments/course/${courseId}/invite/${userId}`),
 }
 
 // ─── Progress ─────────────────────────────────────────────────────────────────
