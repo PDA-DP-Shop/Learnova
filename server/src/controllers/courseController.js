@@ -32,25 +32,71 @@ const getCourses = async (req, res) => {
 const getPublicCourses = async (req, res) => {
   try {
     const where = { isPublished: true };
+
+    // Unauthenticated users: only EVERYONE-visible + OPEN/PAYMENT courses (never invitation-only)
     if (!req.user) {
       where.visibility = 'EVERYONE';
+      where.accessRule = { not: 'ON_INVITATION' };
+
+      const courses = await prisma.course.findMany({
+        where,
+        include: {
+          instructor: { select: { id: true, name: true } },
+          lessons: { select: { duration: true } },
+          _count: { select: { lessons: true, enrollments: true, quizzes: true } },
+          reviews: { select: { rating: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      return res.json(courses.map(c => ({
+        ...c,
+        totalDuration: c.lessons.reduce((acc, l) => acc + (l.duration || 0), 0)
+      })));
     }
+
+    // Authenticated users — exclude ON_INVITATION courses they are NOT enrolled in
+    // Step 1: get the IDs of ON_INVITATION courses this user IS enrolled in
+    const invitedEnrollments = await prisma.enrollment.findMany({
+      where: {
+        userId: req.user.id,
+        course: { isPublished: true, accessRule: 'ON_INVITATION' }
+      },
+      select: { courseId: true }
+    });
+    const enrolledInvitedIds = invitedEnrollments.map(e => e.courseId);
+
+    // Step 2: visibility filter
+    if (req.user.role === 'LEARNER') {
+      where.visibility = 'EVERYONE'; // SIGNED_IN should also show — adjust if needed
+    }
+
+    // Step 3: build the accessRule filter:
+    // Show OPEN + ON_PAYMENT always, plus ON_INVITATION only if enrolled
+    const accessRuleFilter = enrolledInvitedIds.length > 0
+      ? {
+          OR: [
+            { accessRule: { not: 'ON_INVITATION' } },
+            { accessRule: 'ON_INVITATION', id: { in: enrolledInvitedIds } }
+          ]
+        }
+      : { accessRule: { not: 'ON_INVITATION' } };
+
     const courses = await prisma.course.findMany({
-      where,
+      where: { ...where, ...accessRuleFilter },
       include: {
         instructor: { select: { id: true, name: true } },
-        lessons: { select: { duration: true } }, // ADD LESSONS FOR DURATION CALC
+        lessons: { select: { duration: true } },
         _count: { select: { lessons: true, enrollments: true, quizzes: true } },
         reviews: { select: { rating: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
-    const coursesWithDuration = courses.map(c => ({
+    res.json(courses.map(c => ({
       ...c,
       totalDuration: c.lessons.reduce((acc, l) => acc + (l.duration || 0), 0)
-    }));
-    res.json(coursesWithDuration);
+    })));
   } catch (error) {
+    console.error('[getPublicCourses]', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -194,6 +240,13 @@ const getCourseDetail = async (req, res) => {
     });
     if (!course) return res.status(404).json({ message: 'Course not found' });
 
+    if (!req.user) {
+      // Unauthenticated: block ON_INVITATION entirely
+      if (course.accessRule === 'ON_INVITATION') {
+        return res.status(403).json({ message: 'This course is invitation-only' });
+      }
+    }
+
     let enrollment = null;
     let lessonProgress = [];
     let quizAttempts = [];
@@ -203,6 +256,18 @@ const getCourseDetail = async (req, res) => {
       enrollment = await prisma.enrollment.findUnique({
         where: { userId_courseId: { userId: req.user.id, courseId: req.params.id } },
       });
+
+      // Authenticated but not enrolled → block ON_INVITATION courses
+      // (Admins and the course instructor can always view)
+      if (
+        course.accessRule === 'ON_INVITATION' &&
+        !enrollment &&
+        req.user.role !== 'ADMIN' &&
+        course.instructorId !== req.user.id
+      ) {
+        return res.status(403).json({ message: 'This course is invitation-only. Ask the instructor to invite you.' });
+      }
+
       lessonProgress = await prisma.lessonProgress.findMany({
         where: { userId: req.user.id, lessonId: { in: course.lessons.map((l) => l.id) } },
       });
