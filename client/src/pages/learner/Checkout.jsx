@@ -18,7 +18,24 @@ const Checkout = () => {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('card')
   const [processing, setProcessing] = useState(false)
+  const [statusIdx, setStatusIdx] = useState(0)
   
+  const STATUS_STEPS = [
+    "Establishing secure acquisition tunnel...",
+    "Authorizing transaction hash...",
+    "Synchronizing curriculum logic...",
+    "Acquisition mastered!"
+  ]
+
+  useEffect(() => {
+    if (processing) {
+      const timer = setInterval(() => {
+        setStatusIdx(i => Math.min(i + 1, STATUS_STEPS.length - 1))
+      }, 700)
+      return () => { clearInterval(timer); setStatusIdx(0) }
+    }
+  }, [processing])
+
   // Card Form State
   const [form, setForm] = useState({
     cardNumber: '',
@@ -232,19 +249,80 @@ const Checkout = () => {
            </div>
         </div>
 
-        <AnimatePresence>
-           {processing && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[3000] bg-slate-950/95 backdrop-blur-xl flex items-center justify-center p-8 text-center">
-                 <div className="max-w-sm w-full space-y-12">
-                    <div className="relative"><Spinner size="xl" className="text-[#3395FF]" /><div className="absolute inset-0 flex items-center justify-center"><ShieldCheck size={32} className="text-[#3395FF]/30" /></div></div>
-                    <div className="space-y-4">
-                       <h3 className="text-2xl font-black text-white tracking-tight">Processing Settlement</h3>
-                       <p className="text-[11px] text-slate-500 font-bold uppercase tracking-[0.3em] leading-relaxed">Establishing secure synchronization with the <span className="text-[#3395FF]">Learnova acquisition network</span>.</p>
-                    </div>
-                 </div>
-              </motion.div>
-           )}
-        </AnimatePresence>
+         <AnimatePresence>
+            {processing && (
+               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[3000] bg-slate-950/98 backdrop-blur-3xl flex flex-col items-center justify-center p-8 text-center cursor-wait">
+                  {/* Digital Aura */}
+                  <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#3395FF]/10 rounded-full blur-[120px] animate-pulse" />
+                  </div>
+
+                  <div className="max-w-md w-full relative z-10">
+                     {/* Master Visual Component */}
+                     <div className="relative w-24 h-24 mx-auto mb-16">
+                        {/* Outer Pulse Rings */}
+                        <motion.div 
+                          animate={{ scale: [1, 1.4, 1], opacity: [0.3, 0.1, 0.3] }} 
+                          transition={{ duration: 2, repeat: Infinity }} 
+                          className="absolute inset-0 border-2 border-[#3395FF]/30 rounded-[2.5rem]" 
+                        />
+                        <motion.div 
+                          animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.2, 0.5] }} 
+                          transition={{ duration: 2, delay: 0.5, repeat: Infinity }} 
+                          className="absolute inset-2 border-2 border-[#3395FF]/50 rounded-[2rem]" 
+                        />
+                        
+                        {/* Core Shield */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-[#3395FF] to-[#017E84] rounded-[2rem] flex items-center justify-center shadow-[0_20px_40px_rgba(51,149,255,0.3)] border-2 border-white/20">
+                           <Shield className="text-white animate-bounce" size={40} fill="white" />
+                        </div>
+                        
+                        {/* Scanning Bar */}
+                        <motion.div 
+                          animate={{ y: [-40, 40, -40], opacity: [0, 1, 0] }}
+                          transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                          className="absolute left-0 right-0 h-1 bg-white/40 blur-sm z-20"
+                        />
+                     </div>
+
+                     <div className="space-y-6">
+                        <motion.h3 
+                          key={statusIdx}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="text-2xl font-black text-white tracking-tighter font-sora"
+                        >
+                           {STATUS_STEPS[statusIdx]}
+                        </motion.h3>
+                        
+                        {/* Progressive Logic Bar */}
+                        <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden border border-white/5 relative shadow-inner">
+                           <motion.div 
+                             initial={{ width: "0%" }}
+                             animate={{ width: `${(statusIdx + 1) * 25}%` }}
+                             className="h-full bg-gradient-to-r from-[#3395FF] via-emerald-400 to-[#017E84] shadow-[0_0_15px_rgba(51,149,255,0.6)]"
+                           />
+                        </div>
+
+                        <div className="flex flex-col items-center gap-1.5">
+                           <p className="text-[9px] text-[#3395FF] font-black uppercase tracking-[0.4em] leading-relaxed animate-pulse">
+                              Verified Protocol {statusIdx + 1}.0
+                           </p>
+                           <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest opacity-60">
+                              Established secure synchronization via Learnova Node 12
+                           </p>
+                        </div>
+                     </div>
+                  </div>
+
+                  {/* Encryption Meta Tag */}
+                  <div className="absolute bottom-12 flex items-center gap-2 px-5 py-2.5 bg-white/5 border border-white/10 rounded-full backdrop-blur-md">
+                     <Lock size={12} className="text-[#3395FF]" />
+                     <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">AES-256 Quantum Encryption Active</span>
+                  </div>
+               </motion.div>
+            )}
+         </AnimatePresence>
       </div>
     </LearnerLayout>
   )

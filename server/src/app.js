@@ -102,7 +102,7 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, () => console.log(`🚀 Learnova server running on port ${PORT}\n✅ Learnova Communication Station ready for discovery`));
+const server = app.listen(PORT, '127.0.0.1', () => console.log(`🚀 Learnova server running on port ${PORT}\n✅ Learnova Communication Station ready for discovery`));
 
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {

@@ -513,7 +513,7 @@ const CourseForm = () => {
     const title = prompt('Quiz title:')
     if (!title) return
     try {
-      const { data } = await quizAPI.create(id, { title })
+      const { data } = await quizAPI.create(id, { title, isFinal: true })
       setQuizzes((q) => [...q, data])
       navigate(`/admin/courses/${id}/quiz/${data.id}`)
     } catch { toast.error('Failed to create quiz') }

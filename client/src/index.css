@@ -262,6 +262,50 @@ h1, h2, h3, h4, h5, h6 {
 @media (min-width: 768px)  { .container-fluid { padding: 0 2.5rem; } }
 @media (min-width: 1280px) { .container-fluid { padding: 0 4rem; } }
 
+/* ============ REALISM UTILITIES ============ */
+.texture-noise {
+  position: relative;
+}
+.texture-noise::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.015;
+  pointer-events: none;
+  background-image: url("https://grainy-gradients.vercel.app/noise.svg");
+  mix-blend-mode: overlay;
+  z-index: 50;
+}
+
+.shadow-real {
+  box-shadow: 
+    0 2px 4px rgba(0,0,0,0.02),
+    0 10px 20px rgba(0,0,0,0.04),
+    0 20px 40px rgba(0,0,0,0.06);
+}
+
+.glass-mesh {
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(12px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+}
+
+.text-reveal {
+  background: linear-gradient(to right, #0F172A 20%, #475569 40%, #475569 60%, #0F172A 80%);
+  background-size: 200% auto;
+  color: #000;
+  background-clip: text;
+  text-fill-color: transparent;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shine 5s linear infinite;
+}
+
+@keyframes shine {
+  to { background-position: 200% center; }
+}
+
 /* ============ MISC UTILITIES ============ */
 .fade-edge-v {
   mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);

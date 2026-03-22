@@ -24,6 +24,11 @@ cd server && npx prisma migrate dev --name init
 cd server && npm run dev   # :5000
 cd client && npm run dev   # :5173
 ```
+### kill all run server 
+```bash
+lsof -ti:5000,5173 | xargs kill -9
+```
+
 
 ### 4. Visit
 - Learner: http://localhost:5173/courses

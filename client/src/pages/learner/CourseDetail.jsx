@@ -81,6 +81,10 @@ const CourseDetail = () => {
   const completedIds = new Set(lessonProgress?.filter((p) => p.isCompleted).map((p) => p.lessonId))
   const completedQuizzes = new Set(quizAttempts?.map((a) => a.quizId))
   
+  const finalQuizzes = course?.quizzes?.filter(q => q.isFinal) || []
+  const hasFinalAssignment = finalQuizzes.length > 0
+  const allFinalDone = hasFinalAssignment && finalQuizzes.every(q => completedQuizzes.has(q.id))
+
   const totalItems = (course?.lessons?.length || 0) + (course?.quizzes?.length || 0)
   const completedCount = completedIds.size + completedQuizzes.size
   const pct = calcCompletionPercent(completedCount, totalItems)
@@ -346,7 +350,7 @@ const CourseDetail = () => {
                           Launch Program
                           <Play size={18} fill="currentColor" />
                         </Link>
-                        {pct >= 100 && (
+                        {pct >= 100 && allFinalDone && (
                           <button
                             onClick={() => generateCertificate({
                               userName: user?.name,
@@ -359,6 +363,14 @@ const CourseDetail = () => {
                             <Download size={14} />
                             Certificate of Completion
                           </button>
+                        )}
+                        {pct >= 100 && !hasFinalAssignment && (
+                          <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl max-w-sm">
+                            <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest leading-relaxed">
+                              ⚠️ Final Assessment Missing<br/>
+                              <span className="font-medium lowercase first-letter:uppercase text-slate-500">Each certified program requires a final mastery exam. Please ask the instructor to add one.</span>
+                            </p>
+                          </div>
                         )}
                       </>
                     ) : (

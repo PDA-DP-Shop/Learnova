@@ -112,6 +112,7 @@ model Quiz {
   rewards   QuizReward?
   attempts  QuizAttempt[]
   lessons   Lesson[]     @relation("LessonQuiz")
+  isFinal   Boolean      @default(false)
   createdAt DateTime     @default(now())
 }
 

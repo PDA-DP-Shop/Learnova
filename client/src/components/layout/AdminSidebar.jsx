@@ -115,22 +115,6 @@ const AdminSidebar = ({ collapsed, onToggle }) => {
 
       {/* Security & Identity Footer */}
       <div className="p-4 space-y-4">
-        {/* Support Link Discovery */}
-        {!collapsed && (
-          <div className="bg-slate-50 rounded-3xl p-4 border border-slate-100">
-             <div className="flex items-center gap-3 mb-3">
-                <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center text-[#714B67] shadow-sm">
-                   <Zap size={14} />
-                </div>
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-800">Direct Link</span>
-             </div>
-             <p className="text-[10px] text-slate-500 font-medium leading-relaxed mb-3">Require assistance with curriculum synchronization?</p>
-             <button className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-[#714B67] hover:underline">
-                Open Support Ticket
-             </button>
-          </div>
-        )}
-
         <div className={`p-1 bg-slate-100 rounded-[24px] ${collapsed ? 'flex flex-col items-center gap-1' : 'space-y-1'}`}>
            <div className={`flex items-center gap-3 rounded-[20px] transition-all bg-white border border-slate-200/50 shadow-sm ${collapsed ? 'p-1.5 h-12 w-12 justify-center' : 'px-4 py-3'}`}>
              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-slate-100 to-slate-50 flex items-center justify-center text-xs font-black text-slate-900 shrink-0 border border-slate-200">

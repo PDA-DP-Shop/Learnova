@@ -157,22 +157,6 @@ const CelebrationOverlay = ({ isOpen, onClose, courseTitle, userName, instructor
                 </div>
               </motion.div>
 
-              <motion.button
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.75 }}
-                onClick={() => generateCertificate({
-                  userName,
-                  courseName: courseTitle,
-                  instructorName,
-                  completionDate,
-                  isParticipation: false,
-                })}
-                className="mt-10 w-full h-14 bg-white hover:bg-slate-50 text-[#714B67] border-2 border-[#714B67]/20 hover:border-[#714B67]/40 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] shadow-sm transition-all flex items-center justify-center gap-3 group pointer-events-auto active:scale-95"
-              >
-                <Download size={16} className="group-hover:-translate-y-0.5 transition-transform" />
-                Download Certificate of Completion
-              </motion.button>
 
               <motion.button
                 initial={{ opacity: 0, y: 20 }}

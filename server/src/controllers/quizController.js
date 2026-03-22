@@ -20,9 +20,9 @@ const getQuizzes = async (req, res) => {
 
 const createQuiz = async (req, res) => {
   try {
-    const { title } = req.body;
+    const { title, isFinal } = req.body;
     const quiz = await prisma.quiz.create({
-      data: { courseId: req.params.courseId, title },
+      data: { courseId: req.params.courseId, title, isFinal: !!isFinal },
       include: { questions: true, rewards: true },
     });
     res.status(201).json(quiz);
