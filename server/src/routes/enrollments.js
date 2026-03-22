@@ -72,10 +72,9 @@ router.post('/course/:courseId/invite', authenticate, requireRole('INSTRUCTOR', 
       return res.status(403).json({ message: 'You are not the instructor of this course' });
     }
 
-    // Find learner by email
+    // Find user by email (any role can be invited)
     const learner = await prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } });
     if (!learner) return res.status(404).json({ message: `No user found with email: ${email}` });
-    if (learner.role !== 'LEARNER') return res.status(400).json({ message: 'Only learner accounts can be invited' });
     if (!learner.isActive) return res.status(400).json({ message: 'This user account is disabled' });
 
     // Check if already enrolled
