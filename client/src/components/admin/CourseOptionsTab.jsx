@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import { UserPlus, Mail, CheckCircle, X, Loader2, Users, Send } from 'lucide-react'
+import { enrollmentAPI } from '../../services/api'
+import toast from 'react-hot-toast'
 
 const visibilityOptions = [
   { value: 'EVERYONE',  emoji: '🌍', label: 'Everyone',  description: 'visible to public' },
@@ -11,14 +14,45 @@ const accessOptions = [
   { value: 'ON_PAYMENT',    emoji: '💳', label: 'On Payment',     description: 'purchase required' },
 ]
 
-export default function CourseOptionsTab({ courseData, onChange }) {
+export default function CourseOptionsTab({ courseData, courseId, onChange }) {
   const [tagInput, setTagInput] = useState(
     Array.isArray(courseData.tags) ? courseData.tags.join(', ') : courseData.tags || ''
   )
 
+  // Invite state
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviting, setInviting] = useState(false)
+  const [invited, setInvited] = useState([]) // list of successfully invited users this session
+
   const handleTagBlur = () => {
     const tagsArray = tagInput.split(',').map(t => t.trim()).filter(Boolean)
     onChange('tags', tagsArray)
+  }
+
+  const handleInvite = async () => {
+    const email = inviteEmail.trim()
+    if (!email) return
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error('Please enter a valid email address')
+      return
+    }
+    if (!courseId) {
+      toast.error('Save the course first before inviting learners')
+      return
+    }
+
+    setInviting(true)
+    try {
+      const { data } = await enrollmentAPI.invite(courseId, email)
+      setInvited(prev => [{ email, name: data.user?.name || email, ...data.user }, ...prev])
+      setInviteEmail('')
+      toast.success(data.message || `${email} enrolled successfully!`)
+    } catch (err) {
+      const msg = err?.response?.data?.message || 'Failed to invite learner'
+      toast.error(msg)
+    } finally {
+      setInviting(false)
+    }
   }
 
   return (
@@ -96,7 +130,7 @@ export default function CourseOptionsTab({ courseData, onChange }) {
           ))}
         </div>
 
-        {/* Price field — slide in when ON_PAYMENT selected */}
+        {/* ─ Price field — ON_PAYMENT ─ */}
         {courseData.accessRule === 'ON_PAYMENT' && (
           <div className="mt-5 animate-fade-in">
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">
@@ -119,6 +153,81 @@ export default function CourseOptionsTab({ courseData, onChange }) {
           </div>
         )}
       </div>
+
+      {/* ── Invite Learners — ON_INVITATION ── */}
+      {courseData.accessRule === 'ON_INVITATION' && (
+        <div className="animate-fade-in">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-7 h-7 rounded-xl bg-[#714B67]/10 flex items-center justify-center">
+              <UserPlus size={14} className="text-[#714B67]" />
+            </div>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-widest">
+              Invite Learners by Email
+            </label>
+          </div>
+
+          {/* Info banner */}
+          <div className="flex items-start gap-3 p-4 bg-[#714B67]/5 border border-[#714B67]/15 rounded-2xl mb-5">
+            <Users size={16} className="text-[#714B67] mt-0.5 shrink-0" />
+            <p className="text-xs text-[#714B67]/80 font-medium leading-relaxed">
+              This course requires an invitation. Enter a learner's registered email address below
+              to enroll them directly — they will get immediate access to all lessons.
+            </p>
+          </div>
+
+          {/* Email input + send button */}
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Mail size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="email"
+                value={inviteEmail}
+                onChange={e => setInviteEmail(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleInvite()}
+                placeholder="learner@example.com"
+                className="w-full pl-10 pr-4 py-3.5 rounded-2xl border-2 border-gray-200 bg-white text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#714B67]/30 focus:border-[#714B67]/40 transition-all"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={handleInvite}
+              disabled={inviting || !inviteEmail.trim()}
+              className="flex items-center gap-2 px-5 py-3.5 bg-[#714B67] hover:bg-[#54384c] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-2xl transition-all shadow-sm whitespace-nowrap"
+            >
+              {inviting ? (
+                <><Loader2 size={14} className="animate-spin" /> Inviting…</>
+              ) : (
+                <><Send size={14} /> Invite</>
+              )}
+            </button>
+          </div>
+
+          {/* Success list from this session */}
+          {invited.length > 0 && (
+            <div className="mt-5 space-y-2">
+              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">
+                Enrolled this session ({invited.length})
+              </p>
+              {invited.map((u, i) => (
+                <div key={i} className="flex items-center gap-3 px-4 py-3 bg-emerald-50 border border-emerald-100 rounded-2xl">
+                  {u.avatar ? (
+                    <img src={u.avatar} className="w-8 h-8 rounded-xl object-cover" alt="" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 font-black text-sm">
+                      {(u.name || u.email)[0].toUpperCase()}
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-emerald-800 truncate">{u.name}</p>
+                    <p className="text-xs text-emerald-600 truncate">{u.email}</p>
+                  </div>
+                  <CheckCircle size={18} className="text-emerald-500 shrink-0" />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
     </div>
   )

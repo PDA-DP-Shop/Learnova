@@ -631,6 +631,7 @@ const CourseForm = () => {
         {activeTab === 'options' && (
           <CourseOptionsTab
             courseData={form}
+            courseId={id}
             onChange={(field, value) => setForm(f => ({ ...f, [field]: value }))}
           />
         )}
