@@ -346,19 +346,20 @@ const CourseDetail = () => {
                           Launch Program
                           <Play size={18} fill="currentColor" />
                         </Link>
-                        <button
-                          onClick={() => generateCertificate({
-                            userName: user?.name,
-                            courseName: course?.title,
-                            instructorName: course?.instructor?.name,
-                            completionDate: enrollment?.completedAt || new Date().toISOString(),
-                            isParticipation: pct < 100,
-                          })}
-                          className="w-full lg:w-auto h-12 px-8 bg-white border-2 border-[#714B67]/20 hover:border-[#714B67]/50 text-[#714B67] rounded-2xl flex items-center justify-center gap-3 transition-all text-[10px] font-black uppercase tracking-widest hover:-translate-y-0.5 shadow-sm"
-                        >
-                          <Download size={14} />
-                          {pct >= 100 ? 'Certificate of Completion' : 'Certificate of Participation'}
-                        </button>
+                        {pct >= 100 && (
+                          <button
+                            onClick={() => generateCertificate({
+                              userName: user?.name,
+                              courseName: course?.title,
+                              instructorName: course?.instructor?.name,
+                              completionDate: enrollment?.completedAt || new Date().toISOString(),
+                            })}
+                            className="w-full lg:w-auto h-12 px-8 bg-white border-2 border-[#714B67]/20 hover:border-[#714B67]/50 text-[#714B67] rounded-2xl flex items-center justify-center gap-3 transition-all text-[10px] font-black uppercase tracking-widest hover:-translate-y-0.5 shadow-sm"
+                          >
+                            <Download size={14} />
+                            Certificate of Completion
+                          </button>
+                        )}
                       </>
                     ) : (
                       <button

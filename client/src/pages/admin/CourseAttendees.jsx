@@ -79,7 +79,7 @@ const CourseAttendees = () => {
       courseName: course?.title,
       instructorName: course?.instructor?.name,
       completionDate: attendee.completedAt || new Date().toISOString(),
-      isParticipation: attendee.status !== 'COMPLETED',
+      isParticipation: false,
     })
   }
 
@@ -227,14 +227,18 @@ const CourseAttendees = () => {
 
                         {/* Certificate */}
                         <td className="px-6 py-4 text-right">
-                          <button
-                            onClick={() => handleIssueCertificate(a)}
-                            title={a.status === 'COMPLETED' ? 'Issue Completion Certificate' : 'Issue Participation Certificate'}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest border-2 border-[#714B67]/20 text-[#714B67] rounded-xl hover:bg-[#714B67] hover:text-white hover:border-[#714B67] transition-all"
-                          >
-                            <Download size={11} />
-                            {a.status === 'COMPLETED' ? 'Completion' : 'Participation'}
-                          </button>
+                          {a.status === 'COMPLETED' ? (
+                            <button
+                              onClick={() => handleIssueCertificate(a)}
+                              title="Issue Completion Certificate"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest border-2 border-[#714B67]/20 text-[#714B67] rounded-xl hover:bg-[#714B67] hover:text-white hover:border-[#714B67] transition-all"
+                            >
+                              <Download size={11} />
+                              Completion
+                            </button>
+                          ) : (
+                            <span className="text-slate-300 text-xs font-bold">—</span>
+                          )}
                         </td>
                       </motion.tr>
                     ))}
